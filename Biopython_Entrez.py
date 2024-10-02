@@ -3,6 +3,11 @@ import pandas as pd # Opens and manipulates data frames
 from Bio import Entrez # Provides access to NCBI's databases (Uses Bio Python package)
 from collections import Counter # Calculates frequencies
 import re # Needed to clean strings
+import os # Needed for navigating the computer's filepath system
+import ssl
+
+# Disable SSL Verification
+ssl._create_default_https_context = ssl._create_unverified_context
 
 # Open two data frames: the main one and a search terms column.
 faculty_df = pd.read_excel("BioSci Faculty.xlsx")
@@ -188,4 +193,11 @@ columns_to_drop = ['Faculty_Author', 'Faculty_Author_Affiliation', 'PMIDs', 'Mes
 # Drop the specified columns
 pca_matrix = combined_faculty_df.drop(columns=columns_to_drop)
 
-pca_matrix.to_excel('/Users/mitalimittal/Downloads/keywords project/mesh_terms_matrix_5yrs_and_keywords.xlsx', index = False)
+# STEP X: Export matrix for PCA analyses
+current_folder = os.getcwd() # Get the current working directory
+
+file_path = os.path.join(current_folder, "mesh_terms_matrix_5yrs_and_keywords.xlsx") # Define the file path within the current folder
+
+pca_matrix.to_excel(file_path, index=False) # Save the file to the current folder
+
+#pca_matrix.to_excel('/Users/mitalimittal/Downloads/keywords project/mesh_terms_matrix_5yrs_and_keywords.xlsx', index = False)

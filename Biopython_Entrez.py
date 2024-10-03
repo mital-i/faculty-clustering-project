@@ -3,7 +3,6 @@ import pandas as pd # Opens and manipulates data frames
 from Bio import Entrez # Provides access to NCBI's databases (Uses Bio Python package)
 from collections import Counter # Calculates frequencies
 import re # Needed to clean strings
-import os # Needed for navigating the computer's filepath system
 import ssl
 
 # Disable SSL Verification
@@ -12,7 +11,7 @@ ssl._create_default_https_context = ssl._create_unverified_context
 # Open two data frames: the main one and a search terms column.
 faculty_df = pd.read_excel("BioSci Faculty.xlsx")
 search_term = pd.read_excel("BioSci Faculty.xlsx", usecols=["Faculty_Author_Affiliation"])
-research_keywords = pd.read_excel("Research Keywords - 2024.07.23.xlsx")
+research_keywords = pd.read_excel("Research Keywords.xlsx")
 
 # Create a new empty column called 'PMIDs'.
 faculty_df["PMIDs"] = None
@@ -31,6 +30,7 @@ for faculty in range(len(faculty_df)):
         )
     record = Entrez.read(handle_search)
     idlist = record["IdList"]
+    # Print statement to check if IDs are found
     faculty_df.at[faculty, "PMIDs"] = idlist
     handle_search.close()
 
@@ -72,7 +72,7 @@ def duplicate_mesh_terms(mesh_terms):
 mapped_mesh_terms['Mesh_Terms'] = mapped_mesh_terms['Mesh_Terms'].apply(duplicate_mesh_terms) # Apply the function to the Mesh_Terms column
 
 # Merge the additional terms with the combined faculty DataFrame
-combined_faculty_df = pd.merge(faculty_df, mapped_mesh_terms, left_on='Faculty', right_on='Faculty', how='inner')
+combined_faculty_df = pd.merge(faculty_df, mapped_mesh_terms, left_on='Faculty_Full_Name', right_on='Faculty_Full_Name', how='inner')
 
 # Combine 'Mesh_Terms_x' and 'Mesh_Terms_y' into one column for each 'Faculty'
 combined_faculty_df['Combined_Mesh_Terms'] = combined_faculty_df['Mesh_Terms_x'].fillna('') + '; ' + combined_faculty_df['Mesh_Terms_y'].fillna('')
@@ -188,16 +188,10 @@ combined_faculty_df = pd.concat([combined_faculty_df, normalized_scores_df], axi
 combined_faculty_df.to_excel('faculty_mesh_terms.xlsx', index = False)
 
 # Define the columns to drop, including "Unnamed: 2" through "Unnamed: 29"
-columns_to_drop = ['Faculty_Author', 'Faculty_Author_Affiliation', 'PMIDs', 'Mesh_Terms_Abstracts', 'Mesh_Terms_Mapped', 'Combined_Mesh_Terms', 'Normalized_Scores', 'most_common_item', 'average_frequency'] + [f'Unnamed: {i}' for i in range(2, 30)]
+columns_to_drop = ['Faculty', 'Faculty_Author', 'Faculty_Author_Affiliation', 'PMIDs', 'Mesh_Terms_Abstracts', 'Mesh_Terms_Mapped', 'Combined_Mesh_Terms', 'Normalized_Scores', 'most_common_item', 'average_frequency'] + [f'Unnamed: {i}' for i in range(2, 30)]
 
 # Drop the specified columns
 pca_matrix = combined_faculty_df.drop(columns=columns_to_drop)
 
 # STEP X: Export matrix for PCA analyses
-current_folder = os.getcwd() # Get the current working directory
-
-file_path = os.path.join(current_folder, "mesh_terms_matrix_5yrs_and_keywords.xlsx") # Define the file path within the current folder
-
-pca_matrix.to_excel(file_path, index=False) # Save the file to the current folder
-
-#pca_matrix.to_excel('/Users/mitalimittal/Downloads/keywords project/mesh_terms_matrix_5yrs_and_keywords.xlsx', index = False)
+pca_matrix.to_excel("mesh_terms_matrix_5yrs_and_keywords.xlsx", index = False)

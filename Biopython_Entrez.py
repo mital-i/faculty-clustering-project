@@ -9,8 +9,8 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
 # Open two data frames: the main one and a search terms column.
-faculty_df = pd.read_excel("BioSci Faculty.xlsx")
-search_term = pd.read_excel("BioSci Faculty.xlsx", usecols=["Faculty_Author_Affiliation"])
+faculty_df = pd.read_excel("BioSci Faculty.xlsx", sheet = 'minus_teaching')
+search_term = pd.read_excel("BioSci Faculty.xlsx", sheet = 'minus_teaching', usecols=["Faculty_Author_Affiliation"])
 research_keywords = pd.read_excel("Research Keywords.xlsx")
 
 # Create a new empty column called 'PMIDs'.
@@ -30,7 +30,6 @@ for faculty in range(len(faculty_df)):
         )
     record = Entrez.read(handle_search)
     idlist = record["IdList"]
-    # Print statement to check if IDs are found
     faculty_df.at[faculty, "PMIDs"] = idlist
     handle_search.close()
 
@@ -187,11 +186,13 @@ combined_faculty_df = pd.concat([combined_faculty_df, normalized_scores_df], axi
 # Revise the existing Excel document.
 combined_faculty_df.to_excel('faculty_mesh_terms.xlsx', index = False)
 
-# Define the columns to drop, including "Unnamed: 2" through "Unnamed: 29"
-columns_to_drop = ['Faculty', 'Faculty_Author', 'Faculty_Author_Affiliation', 'PMIDs', 'Mesh_Terms_Abstracts', 'Mesh_Terms_Mapped', 'Combined_Mesh_Terms', 'Normalized_Scores', 'most_common_item', 'average_frequency'] + [f'Unnamed: {i}' for i in range(2, 30)]
+# Get the columns between 'Normalized_Alzheimer Disease' and 'Normalized_Membrane Glycoproteins'
 
-# Drop the specified columns
-pca_matrix = combined_faculty_df.drop(columns=columns_to_drop)
+pd.options.display.max_columns = None
+pd.options.display.max_rows = None
 
-# STEP X: Export matrix for PCA analyses
-pca_matrix.to_excel("mesh_terms_matrix_5yrs_and_keywords.xlsx", index = False)
+# Concatenate the first column with the selected range of columns
+
+pca_matrix = combined_faculty_df.drop(combined_faculty_df.columns[1:39], axis=1)
+
+pca_matrix.to_excel('mesh_terms_matrix_5yrs_and_keywords.xlsx', index = False)

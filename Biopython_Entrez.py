@@ -9,9 +9,9 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
 # Open two data frames: the main one and a search terms column.
-faculty_df = pd.read_excel("BioSci Faculty.xlsx", sheet = 'minus_teaching')
-search_term = pd.read_excel("BioSci Faculty.xlsx", sheet = 'minus_teaching', usecols=["Faculty_Author_Affiliation"])
-research_keywords = pd.read_excel("Research Keywords.xlsx")
+faculty_df = pd.read_excel("BioSci Faculty.xlsx", sheet_name = 'minus_teaching')
+search_term = pd.read_excel("BioSci Faculty.xlsx", sheet_name = 'minus_teaching', usecols=["Faculty_Author_Affiliation"])
+research_keywords = pd.read_excel("Research keywords - 2024.07.23.xlsx")
 
 # Create a new empty column called 'PMIDs'.
 faculty_df["PMIDs"] = None
@@ -61,6 +61,7 @@ for faculty in range(len(faculty_df)):
 
 # Open data frame that has the mapped MeSH terms.
 mapped_mesh_terms = pd.read_excel("research_keywords_cleaned_mesh_terms.xlsx")
+abstract_mesh_terms = pd.read_csv("output_df.csv")
 
 #Function to duplicate the items in the Mesh_Terms column
 def duplicate_mesh_terms(mesh_terms):
@@ -71,13 +72,16 @@ def duplicate_mesh_terms(mesh_terms):
 mapped_mesh_terms['Mesh_Terms'] = mapped_mesh_terms['Mesh_Terms'].apply(duplicate_mesh_terms) # Apply the function to the Mesh_Terms column
 
 # Merge the additional terms with the combined faculty DataFrame
-combined_faculty_df = pd.merge(faculty_df, mapped_mesh_terms, left_on='Faculty_Full_Name', right_on='Faculty_Full_Name', how='inner')
+####   combined_faculty_df = pd.merge(faculty_df, mapped_mesh_terms, left_on='Faculty_Full_Name', right_on='Faculty_Full_Name', how='inner')
+merged_df1 = pd.merge(faculty_df, abstract_mesh_terms, on='Faculty', how='inner')
+combined_faculty_df = pd.merge(merged_df1, mapped_mesh_terms, on='Faculty_Full_Name', how='inner')
 
 # Combine 'Mesh_Terms_x' and 'Mesh_Terms_y' into one column for each 'Faculty'
-combined_faculty_df['Combined_Mesh_Terms'] = combined_faculty_df['Mesh_Terms_x'].fillna('') + '; ' + combined_faculty_df['Mesh_Terms_y'].fillna('')
+combined_faculty_df['Combined_Mesh_Terms'] = combined_faculty_df['Mesh_Terms_x'].fillna('') + '; ' + combined_faculty_df['Mesh_Terms_y'].fillna('') + '; ' + combined_faculty_df['MTI_Output'].fillna('')
 
 # Rename individual columns to preserve them
-combined_faculty_df.rename(columns = {'Mesh_Terms_x': 'Mesh_Terms_Abstracts', 'Mesh_Terms_y': 'Mesh_Terms_Mapped'}, inplace = True)
+print(combined_faculty_df.columns)
+combined_faculty_df.rename(columns = {'PMIDs': 'Mesh_Terms_Abstracts', 'Mesh_Terms': 'Mesh_Terms_Mapped', 'MTI_Output': "Abstract_Mesh_Terms"}, inplace = True)
 
 # This cell removes unhelpful MeSH terms from each faculty member's Combined_Mesh_Terms list.
 

@@ -25,8 +25,8 @@ import kaleido
 # Step 2: Set up work space
 
 # Import raw data matrix
-rawData = pd.read_excel('/Users/mitalimittal/Downloads/extract_mesh_terms/PCA_Analyses/mesh_terms_matrix_5yrs_and_keywords.xlsx', index_col = 'Faculty')
-faculty_column = pd.read_excel('/Users/mitalimittal/Downloads/extract_mesh_terms/PCA_Analyses/mesh_terms_matrix_5yrs_and_keywords.xlsx', usecols=['Faculty'])
+rawData = pd.read_excel('/Users/sarkisj/Library/CloudStorage/OneDrive-UCIrvine/BioSci Research Development/Faculty-Keyword-Inventory-Project/faculty-mapped-mesh-terms/mesh_terms_matrix_5yrs_and_keywords.xlsx', index_col = 'Faculty')
+faculty_column = pd.read_excel('/Users/sarkisj/Library/CloudStorage/OneDrive-UCIrvine/BioSci Research Development/Faculty-Keyword-Inventory-Project/faculty-mapped-mesh-terms/mesh_terms_matrix_5yrs_and_keywords.xlsx', usecols=['Faculty'])
 
 # Remove spaces from column names
 rawData.columns = rawData.columns.str.replace(' ', '_').str.replace('-', '_').str.replace(',', '_')
@@ -151,13 +151,13 @@ fig = px.scatter(umapDf_pca, x="V1", y="V2", color='cluster', title="UMAP with K
 fig.show()
 
 # Save outputs
-path = "/Users/mitalimittal/Downloads/extract_mesh_terms/PCA_Analyses"
+path = '/Users/sarkisj/Library/CloudStorage/OneDrive-UCIrvine/BioSci Research Development/Faculty-Keyword-Inventory-Project/faculty-mapped-mesh-terms'
 sig_df_path = os.path.join(path, "Significant_terms_per_cluster.csv")
 cluster_df_path = os.path.join(path, "Professors_in_clusters.csv")
 fig_path = os.path.join(path, "UMAP_professors_clusters.pdf")
 
-umapDf_pca = umapDf_pca.merge(faculty_column, how='right')
-
+umapDf_pca = umapDf_pca.join(faculty_column, how='left')
+umapDf_pca = umapDf_pca.groupby('cluster')['Faculty'].apply(list).reset_index()
 umapDf_pca.to_csv(cluster_df_path,index=True)
 
 sig_df = pd.DataFrame({
@@ -165,5 +165,3 @@ sig_df = pd.DataFrame({
     'P-Value Adjusted': p_adjusted[:len(significant_features)]
 })
 sig_df.to_csv(sig_df_path, index=True)
-
-

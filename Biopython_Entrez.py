@@ -1,5 +1,8 @@
 # Import required packages
+import openpyxl
 import pandas as pd # Opens and manipulates data frames
+pd.set_option('display.max_columns', None) # Display all columns
+pd.set_option('display.max_rows', None) # Display all rows
 from Bio import Entrez # Provides access to NCBI's databases (Uses Bio Python package)
 from collections import Counter # Calculates frequencies
 import re # Needed to clean strings
@@ -9,9 +12,9 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
 # Open two data frames: the main one and a search terms column.
-faculty_df = pd.read_excel("BioSci Faculty.xlsx", sheet_name = 'minus_teaching')
-search_term = pd.read_excel("BioSci Faculty.xlsx", sheet_name = 'minus_teaching', usecols=["Faculty_Author_Affiliation"])
-research_keywords = pd.read_excel("Research keywords - 2024.07.23.xlsx")
+faculty_df = pd.read_excel('BioSci Faculty.xlsx', sheet_name = 'minus_teaching')
+search_term = pd.read_excel('BioSci Faculty.xlsx', sheet_name = 'minus_teaching', usecols=['Faculty_Author_Affiliation'])
+research_keywords = pd.read_excel('Research keywords.xlsx')
 
 # Create a new empty column called 'PMIDs'.
 faculty_df["PMIDs"] = None
@@ -25,7 +28,7 @@ for faculty in range(len(faculty_df)):
     handle_search = Entrez.esearch( # Search function
         db = "pubmed", # Use the PubMed database
         mindate = "2019", # Start date for publication search
-        maxdate = "2024", # End date for publication search
+        maxdate = "2025", # End date for publication search
         term = search_term # Search terms to enter into PubMed
         )
     record = Entrez.read(handle_search)
@@ -55,36 +58,61 @@ for faculty in range(len(faculty_df)):
                 mesh_term_texts.append(descriptor_name)  # Add the descriptor_name to the list
         handle_mesh.close()
     # Convert the list of Mesh terms to a string and assign it to the DataFrame cell
-    faculty_df.at[faculty, 'Mesh_Terms'] = '; '.join(mesh_term_texts)
+    faculty_df.at[faculty, 'Pub_Mesh_Terms'] = '; '.join(mesh_term_texts)
+
+faculty_df.to_excel('TEST_faculty_df.xlsx', index = False)
+
 # For the mapped MeSH terms, this cell combines the MeSH terms for each faculty member under one column called Mesh_Terms.
 
-# Open data frame that has the mapped MeSH terms.
-mapped_mesh_terms = pd.read_excel("research_keywords_cleaned_mesh_terms.xlsx")
-proposal_mesh_terms = pd.read_csv("output_df.csv")
+# Open data frames that have the mapped and proposal MeSH terms
+mapped_mesh_terms = pd.read_excel('research_keywords_cleaned_mesh_terms.xlsx', usecols=['Faculty', 'Mapped_Mesh_Terms'])
+faculty_proposal_mesh_terms = pd.read_excel('Faculty_Abstracts.xlsx', sheet_name = '2024')
 
-#Function to duplicate the items in the Mesh_Terms column
+# Convert all values in 'Proposal_MeSH_Terms' to strings
+faculty_proposal_mesh_terms['Proposal_MeSH_Terms'] = faculty_proposal_mesh_terms['Proposal_MeSH_Terms'].astype(str)
+
+# Group by 'Faculty' and concatenate 'Proposal_MeSH_Terms' with '; ' separator
+proposal_mesh_terms = faculty_proposal_mesh_terms.groupby('Faculty')['Proposal_MeSH_Terms'].agg(lambda x: '; '.join(x)).reset_index()
+print(proposal_mesh_terms)
+
+proposal_mesh_terms.to_excel('TEST_proposal_mesh_terms.xlsx', index = False)
+
+# Function to duplicate the items in the Mesh_Terms column of the mapped_mesh_terms DataFrame
 def duplicate_mesh_terms(mesh_terms):
     if pd.notna(mesh_terms) and mesh_terms != "":
         return str(mesh_terms) + "; " + str(mesh_terms)
     return mesh_terms
-
-mapped_mesh_terms['Mesh_Terms'] = mapped_mesh_terms['Mesh_Terms'].apply(duplicate_mesh_terms) # Apply the function to the Mesh_Terms column
+mapped_mesh_terms['Mapped_Mesh_Terms'] = mapped_mesh_terms['Mapped_Mesh_Terms'].apply(duplicate_mesh_terms) # Apply the function to the Mesh_Terms column
 
 # Merge the additional terms with the combined faculty DataFrame
-merged_df1 = pd.merge(faculty_df, proposal_mesh_terms, on = "Faculty", how='left')
-combined_faculty_df = pd.merge(merged_df1, mapped_mesh_terms, on = "Faculty", how='left')
+merged_df1 = pd.merge(faculty_df, proposal_mesh_terms, on = "Faculty", how='left') # Merge the faculty DataFrame with the proposal Mesh terms DataFrame
+merged_df1 = merged_df1.drop(columns = ['Faculty_Search_Name', 'Faculty_Author', 'Faculty_Author_Affiliation']) # Drop columns from the merged DataFrame
+combined_faculty_df = pd.merge(merged_df1, mapped_mesh_terms, on = "Faculty", how='left') # Merge the combined faculty DataFrame with the mapped Mesh terms DataFrame
 
-# Combine 'Mesh_Terms_x' and 'Mesh_Terms_y' into one column for each 'Faculty'
-combined_faculty_df['Combined_Mesh_Terms'] = combined_faculty_df['Mesh_Terms_x'].fillna('') + '; ' + combined_faculty_df['Mesh_Terms_y'].fillna('') + '; ' + combined_faculty_df['MTI_Output'].fillna('')
+# Combine the three MeSH Terms columns into a new column 'Combined_Mesh_Terms'
+# Ensure all columns exist and handle missing values
+# Ensure all columns exist and handle missing values
+combined_faculty_df['Pub_Mesh_Terms'] = combined_faculty_df['Pub_Mesh_Terms'].fillna('')
+combined_faculty_df['Proposal_MeSH_Terms'] = combined_faculty_df['Proposal_MeSH_Terms'].fillna('')
+combined_faculty_df['Mapped_Mesh_Terms'] = combined_faculty_df['Mapped_Mesh_Terms'].fillna('')
 
-# Rename individual columns to preserve them
+# Concatenate the columns
+combined_faculty_df['Combined_Mesh_Terms'] = combined_faculty_df['Pub_Mesh_Terms'] + '; ' + combined_faculty_df['Proposal_MeSH_Terms'] + '; ' + combined_faculty_df['Mapped_Mesh_Terms']
+
+# Remove leading and trailing semicolons and spaces
+combined_faculty_df['Combined_Mesh_Terms'] = combined_faculty_df['Combined_Mesh_Terms'].str.strip('; ')
+
+# Drop the individual MeSH Terms columns
+combined_faculty_df = combined_faculty_df.drop(columns=['Pub_Mesh_Terms', 'Proposal_MeSH_Terms', 'Mapped_Mesh_Terms']) 
+
+# Save the combined faculty DataFrame to an Excel file
+combined_faculty_df.to_excel('TEST_combined_faculty_df.xlsx', index = False) # Save the combined faculty DataFrame to an Excel file
+
+""" # Rename individual columns to preserve them
 print(combined_faculty_df.columns)
-combined_faculty_df.rename(columns = {'PMIDs': 'Mesh_Terms_Abstracts', 'Mesh_Terms': 'Mesh_Terms_Mapped', 'MTI_Output': "Abstract_Mesh_Terms"}, inplace = True)
-
-combined_faculty_df.to_excel('combined_faculty.df.xlsx', index = False)
+combined_faculty_df.rename(columns = {'PMIDs': 'Mesh_Terms_Abstracts', 'Mesh_Terms': 'Mesh_Terms_Mapped', 'MTI_Output': "Abstract_Mesh_Terms"}, inplace = True) """
 
 # This cell removes unhelpful MeSH terms from each faculty member's Combined_Mesh_Terms list.
-
 # List of terms to remove
 remove_terms = [
     "Animals",
@@ -197,7 +225,7 @@ pd.options.display.max_rows = None
 
 # Concatenate the first column with the selected range of columns
 
-pca_matrix = combined_faculty_df.drop(combined_faculty_df.columns[1:39], axis=1)
+pca_matrix = combined_faculty_df.drop(combined_faculty_df.columns[1:36], axis=1)
 
 pca_matrix.to_excel('mesh_terms_matrix_5yrs_and_keywords.xlsx', index = False)
 

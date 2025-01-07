@@ -200,3 +200,5 @@ pd.options.display.max_rows = None
 pca_matrix = combined_faculty_df.drop(combined_faculty_df.columns[1:39], axis=1)
 
 pca_matrix.to_excel('mesh_terms_matrix_5yrs_and_keywords.xlsx', index = False)
+
+import PCA_Analyses

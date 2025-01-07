@@ -56,12 +56,11 @@ for faculty in range(len(faculty_df)):
         handle_mesh.close()
     # Convert the list of Mesh terms to a string and assign it to the DataFrame cell
     faculty_df.at[faculty, 'Mesh_Terms'] = '; '.join(mesh_term_texts)
-
 # For the mapped MeSH terms, this cell combines the MeSH terms for each faculty member under one column called Mesh_Terms.
 
 # Open data frame that has the mapped MeSH terms.
 mapped_mesh_terms = pd.read_excel("research_keywords_cleaned_mesh_terms.xlsx")
-abstract_mesh_terms = pd.read_csv("output_df.csv")
+proposal_mesh_terms = pd.read_csv("output_df.csv")
 
 #Function to duplicate the items in the Mesh_Terms column
 def duplicate_mesh_terms(mesh_terms):
@@ -72,9 +71,8 @@ def duplicate_mesh_terms(mesh_terms):
 mapped_mesh_terms['Mesh_Terms'] = mapped_mesh_terms['Mesh_Terms'].apply(duplicate_mesh_terms) # Apply the function to the Mesh_Terms column
 
 # Merge the additional terms with the combined faculty DataFrame
-####   combined_faculty_df = pd.merge(faculty_df, mapped_mesh_terms, left_on='Faculty_Full_Name', right_on='Faculty_Full_Name', how='inner')
-merged_df1 = pd.merge(faculty_df, abstract_mesh_terms, on='Faculty', how='inner')
-combined_faculty_df = pd.merge(merged_df1, mapped_mesh_terms, on='Faculty_Full_Name', how='inner')
+merged_df1 = pd.merge(faculty_df, proposal_mesh_terms, on = "Faculty", how='left')
+combined_faculty_df = pd.merge(merged_df1, mapped_mesh_terms, on = "Faculty", how='left')
 
 # Combine 'Mesh_Terms_x' and 'Mesh_Terms_y' into one column for each 'Faculty'
 combined_faculty_df['Combined_Mesh_Terms'] = combined_faculty_df['Mesh_Terms_x'].fillna('') + '; ' + combined_faculty_df['Mesh_Terms_y'].fillna('') + '; ' + combined_faculty_df['MTI_Output'].fillna('')
@@ -82,6 +80,8 @@ combined_faculty_df['Combined_Mesh_Terms'] = combined_faculty_df['Mesh_Terms_x']
 # Rename individual columns to preserve them
 print(combined_faculty_df.columns)
 combined_faculty_df.rename(columns = {'PMIDs': 'Mesh_Terms_Abstracts', 'Mesh_Terms': 'Mesh_Terms_Mapped', 'MTI_Output': "Abstract_Mesh_Terms"}, inplace = True)
+
+combined_faculty_df.to_excel('combined_faculty.df.xlsx', index = False)
 
 # This cell removes unhelpful MeSH terms from each faculty member's Combined_Mesh_Terms list.
 

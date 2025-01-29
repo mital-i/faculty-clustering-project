@@ -184,6 +184,8 @@ for item, count in top_items:
     proportion = count / total_items
     print(f"{item}: {count} ({proportion:.2%})")
 
+
+
 # Function to calculate the normalized scores for a faculty member
 def calculate_normalized_scores(faculty_string, top_items):
     faculty_counter = Counter(str(faculty_string).split("; "))
@@ -195,6 +197,20 @@ def calculate_normalized_scores(faculty_string, top_items):
 
 # Apply the score calculation to each faculty member
 combined_faculty_df['Normalized_Scores'] = combined_faculty_df['Combined_Mesh_Terms'].apply(lambda x: calculate_normalized_scores(x, top_items))
+##### print(combined_faculty_df['Faculty'], combined_faculty_df['Combined_Mesh_Terms'])
+
+
+def get_unique_terms(combined_faculty_df): 
+    unique_words = {}
+    for index, row in combined_faculty_df.iterrows():
+        faculty_name, terms = row['Faculty'], row['Combined_Mesh_Terms']
+        unique_words[faculty_name] = terms
+
+    return unique_words
+
+unique_mesh_terms = get_unique_terms(combined_faculty_df)
+dict_df = pd.DataFrame(list(unique_mesh_terms.items()), columns=['Faculty', 'Unique_Mesh_Terms'])
+dict_df.to_excel('faculty_corresponding_unique_terms.xlsx', index=False)
 
 # Convert the 'Normalized_Scores' column with dictionaries into separate columns
 normalized_scores_df = combined_faculty_df['Normalized_Scores'].apply(pd.Series)

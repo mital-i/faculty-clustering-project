@@ -204,6 +204,9 @@ def get_unique_terms(combined_faculty_df):
     unique_words = {}
     for index, row in combined_faculty_df.iterrows():
         faculty_name, terms = row['Faculty'], row['Combined_Mesh_Terms']
+        terms = [i.strip() for i in terms.split(';')]
+        terms = set(terms)
+        terms = "; ".join(terms)
         unique_words[faculty_name] = terms
 
     return unique_words

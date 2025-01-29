@@ -22,8 +22,8 @@ import kaleido
 #%% Step 2: Set up work space
 
 # Import raw data matrix
-rawData = pd.read_excel('/Users/sarkisj/Library/CloudStorage/OneDrive-UCIrvine/BioSci Research Development/Faculty-Keyword-Inventory-Project/faculty-mapped-mesh-terms/mesh_terms_matrix_5yrs_and_keywords.xlsx', index_col = 'Faculty')
-faculty_column = pd.read_excel('/Users/sarkisj/Library/CloudStorage/OneDrive-UCIrvine/BioSci Research Development/Faculty-Keyword-Inventory-Project/faculty-mapped-mesh-terms/mesh_terms_matrix_5yrs_and_keywords.xlsx', usecols=['Faculty'])
+rawData = pd.read_excel('/Users/mitalimittal/Downloads/faculty-mapped-mesh-terms/mesh_terms_matrix_5yrs_and_keywords.xlsx', index_col = 'Faculty')
+faculty_column = pd.read_excel('/Users/mitalimittal/Downloads/faculty-mapped-mesh-terms/mesh_terms_matrix_5yrs_and_keywords.xlsx', usecols=['Faculty'])
 
 # Remove spaces from column names
 rawData.columns = rawData.columns.str.replace(' ', '_').str.replace('-', '_').str.replace(',', '_')

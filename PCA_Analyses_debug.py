@@ -1,4 +1,3 @@
-#%% Step 1: Load Libraries
 import pandas as pd
 import numpy as np
 from sklearn.decomposition import PCA
@@ -19,18 +18,16 @@ from statsmodels.stats.multitest import multipletests
 import os
 import kaleido
 
-#%% Step 2: Set up work space
-
 # Import raw data matrix
 rawData = pd.read_excel('/Users/mitalimittal/Downloads/faculty-mapped-mesh-terms/mesh_terms_matrix_5yrs_and_keywords.xlsx', index_col = 'Faculty')
+rawData.reset_index(inplace=True) 
+numeric_data = rawData.drop(columns=['Faculty'])
 faculty_column = pd.read_excel('/Users/mitalimittal/Downloads/faculty-mapped-mesh-terms/mesh_terms_matrix_5yrs_and_keywords.xlsx', usecols=['Faculty'])
-
 # Remove spaces from column names
 rawData.columns = rawData.columns.str.replace(' ', '_').str.replace('-', '_').str.replace(',', '_')
 
-#%% Step 3: Run PCA and Visualize
 pca = PCA()
-pca_data = pca.fit_transform(rawData)
+pca_data = pca.fit_transform(numeric_data)
 
 # Visualize explained variance
 explained_variance = pca.explained_variance_ratio_
@@ -44,10 +41,9 @@ plt.show()
 # PCA scatter plot
 pca_df = pd.DataFrame(pca_data, columns=[f'PC{i+1}' for i in range(pca_data.shape[1])])
 fig = px.scatter(pca_df, x='PC1', y='PC2')
-# fig.show()
+fig.show()
 
-#%% Step 4: Run UMAP
-umap_data = UMAP().fit_transform(rawData)
+umap_data = UMAP().fit_transform(numeric_data)
 
 # 2D UMAP plot
 umap_df = pd.DataFrame(umap_data, columns=["V1", "V2"])
@@ -55,20 +51,18 @@ fig = px.scatter(umap_df, x="V1", y="V2", title="UMAP")
 # fig.show()
 
 # 3D UMAP plot
-umap3_data = UMAP(n_components=2).fit_transform(rawData)
+umap3_data = UMAP(n_components=2).fit_transform(numeric_data)
 layout = pd.DataFrame(umap3_data, columns=["X1", "X2"])
 fig = go.Figure(data=[go.Scatter3d(x=layout["X1"], y=layout["X2"],mode='markers')])
 # fig.show()
 
-#%% Step 5: Run t-SNE
 tsne = TSNE(n_components=2, perplexity=25)
-tsne_result = tsne.fit_transform(rawData)
+tsne_result = tsne.fit_transform(numeric_data)
 tsne_df = pd.DataFrame(tsne_result, columns=["V1", "V2"])
 fig = px.scatter(tsne_df, x="V1", y="V2", title="t-SNE")
 # fig.show()
 
-#%% Step 6: Run UMAP on PCA
-pca_result = PCA().fit_transform(rawData)
+pca_result = PCA().fit_transform(numeric_data)
 num_components = 2
 pca_scores = pca_result[:, :num_components]
 
@@ -77,7 +71,6 @@ umapDf_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
 fig = px.scatter(umapDf_pca, x="V1", y="V2", title="UMAP on PCA Components")
 # fig.show()
 
-#%% Loop through and output multiple UMAP plots for different PCA components
 for num_components in range(1, 31):
     pca_scores = pca_result[:, :num_components]
     umap_result = UMAP().fit_transform(pca_scores)
@@ -85,7 +78,6 @@ for num_components in range(1, 31):
     fig = px.scatter(umapDf_pca, x="V1", y="V2", title=f"UMAP with {num_components} PCA Components")
     # fig.show()
 
-#%% Look at nearest neighbors and clustering
 knn = NearestNeighbors(n_neighbors=8)
 knn.fit(pca_scores)
 distances, indices = knn.kneighbors(pca_scores)
@@ -95,12 +87,14 @@ umapDf_pca['cluster'] = dbs.labels_
 fig = px.scatter(umapDf_pca, x="V1", y="V2", color='cluster', title="UMAP with Clusters")
 # fig.show()
 
+umapDf_pca['Faculty'] = rawData['Faculty']
+
 # K-means clustering
 kmeans = KMeans(n_clusters=12, random_state=123).fit(pca_scores)
 umapDf_pca['cluster'] = kmeans.labels_
 
-fig = px.scatter(umapDf_pca, x="V1", y="V2", color='cluster', title="UMAP with K-means Clusters")
-# fig.show()
+fig = px.scatter(umapDf_pca, x="V1", y="V2", color='cluster', title="UMAP with K-means Clusters", hover_data=['Faculty'])
+fig.show()
 
 # Identify optimal number of clusters using silhouette score
 def avg_silhouette(data, k):
@@ -119,8 +113,7 @@ plt.ylabel('Average Silhouette Width')
 plt.title('Silhouette Score for Different K')
 plt.show()
 
-#%% Significant terms for each cluster
-filtered_data_df = pd.DataFrame(rawData)
+filtered_data_df = pd.DataFrame(numeric_data)
 filtered_data_df['cluster'] = kmeans.labels_
 
 def get_anova_pvalues(feature, data):

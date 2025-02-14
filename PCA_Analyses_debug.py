@@ -41,14 +41,15 @@ plt.show()
 # PCA scatter plot
 pca_df = pd.DataFrame(pca_data, columns=[f'PC{i+1}' for i in range(pca_data.shape[1])])
 fig = px.scatter(pca_df, x='PC1', y='PC2')
-fig.show()
+# fig.show()
 
 umap_data = UMAP().fit_transform(numeric_data)
 
 # 2D UMAP plot
 umap_df = pd.DataFrame(umap_data, columns=["V1", "V2"])
-fig = px.scatter(umap_df, x="V1", y="V2", title="UMAP")
-# fig.show()
+umap_df['Faculty'] = rawData['Faculty']
+fig = px.scatter(umap_df, x="V1", y="V2", title="UMAP", hover_data=['Faculty'])
+fig.show()
 
 # 3D UMAP plot
 umap3_data = UMAP(n_components=2).fit_transform(numeric_data)
@@ -59,8 +60,9 @@ fig = go.Figure(data=[go.Scatter3d(x=layout["X1"], y=layout["X2"],mode='markers'
 tsne = TSNE(n_components=2, perplexity=25)
 tsne_result = tsne.fit_transform(numeric_data)
 tsne_df = pd.DataFrame(tsne_result, columns=["V1", "V2"])
-fig = px.scatter(tsne_df, x="V1", y="V2", title="t-SNE")
-# fig.show()
+tsne_df['Faculty'] = rawData['Faculty']
+fig = px.scatter(tsne_df, x="V1", y="V2", title="t-SNE", hover_data=['Faculty'])
+fig.show()
 
 pca_result = PCA().fit_transform(numeric_data)
 num_components = 2
@@ -68,15 +70,17 @@ pca_scores = pca_result[:, :num_components]
 
 umap_result = UMAP().fit_transform(pca_scores)
 umapDf_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
-fig = px.scatter(umapDf_pca, x="V1", y="V2", title="UMAP on PCA Components")
-# fig.show()
+umapDf_pca['Faculty'] = rawData['Faculty']
+fig = px.scatter(umapDf_pca, x="V1", y="V2", title="UMAP on PCA Components", hover_data=['Faculty'])
+fig.show()
 
-for num_components in range(1, 31):
+for num_components in range(1, 2):
     pca_scores = pca_result[:, :num_components]
     umap_result = UMAP().fit_transform(pca_scores)
     umapDf_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
-    fig = px.scatter(umapDf_pca, x="V1", y="V2", title=f"UMAP with {num_components} PCA Components")
-    # fig.show()
+    umapDf_pca['Faculty'] = rawData['Faculty']
+    fig = px.scatter(umapDf_pca, x="V1", y="V2", title=f"UMAP with {num_components} PCA Components", hover_data=['Faculty'])
+    fig.show()
 
 knn = NearestNeighbors(n_neighbors=8)
 knn.fit(pca_scores)
@@ -84,8 +88,8 @@ distances, indices = knn.kneighbors(pca_scores)
 dbs = DBSCAN(eps=0.05, min_samples=2).fit(pca_scores)
 umapDf_pca['cluster'] = dbs.labels_
 
-fig = px.scatter(umapDf_pca, x="V1", y="V2", color='cluster', title="UMAP with Clusters")
-# fig.show()
+fig = px.scatter(umapDf_pca, x="V1", y="V2", color='cluster', title="UMAP with Clusters", hover_data=['Faculty'])
+fig.show()
 
 umapDf_pca['Faculty'] = rawData['Faculty']
 
@@ -104,6 +108,8 @@ def avg_silhouette(data, k):
     return sil_score
 
 k_values = range(2, 21)
+
+umapDf_pca = umapDf_pca.drop(columns=['Faculty'])
 sil_values = [avg_silhouette(umapDf_pca, k) for k in k_values]
 
 plt.figure()
@@ -121,7 +127,10 @@ def get_anova_pvalues(feature, data):
     anova_table = sm.stats.anova_lm(model, typ=2)
     return anova_table["PR(>F)"][0]
 
+filtered_data_df.columns = filtered_data_df.columns.str.replace(' ', '_').str.replace(',', '_').str.replace('-', '_')
 feature_names = filtered_data_df.columns[:-1]
+# print(feature_names), print(filtered_data_df.columns)
+# print(filtered_data_df.dtypes)
 pvalues = {feature: get_anova_pvalues(feature, filtered_data_df) for feature in feature_names}
 
 # Adjust p-values using Benjamini-Hochberg method
@@ -130,8 +139,10 @@ significant_features = [feature for feature, pval in zip(feature_names, p_adjust
 print("Significant features:", significant_features)
 
 # Plot UMAP result with clusters
-fig = px.scatter(umapDf_pca, x="V1", y="V2", color='cluster', title="UMAP with K-means Clusters")
-# fig.show()
+umapDf_pca['Faculty'] = rawData['Faculty']
+fig = px.scatter(umapDf_pca, x="V1", y="V2", color='cluster', title="UMAP with K-means Clusters", hover_data=['Faculty'])
+fig.show()
+umapDf_pca = umapDf_pca.drop(columns=['Faculty'])
 
 # Save outputs
 path = '/Users/mitalimittal/Downloads/faculty-mapped-mesh-terms'

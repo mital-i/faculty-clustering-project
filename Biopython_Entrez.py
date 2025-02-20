@@ -71,7 +71,7 @@ faculty_proposal_mesh_terms['Proposal_Mesh_Terms'] = faculty_proposal_mesh_terms
 
 # Group by 'Faculty' and concatenate 'Proposal_MeSH_Terms' with '; ' separator
 proposal_mesh_terms = faculty_proposal_mesh_terms.groupby('Faculty')['Proposal_Mesh_Terms'].agg(lambda x: '; '.join(x)).reset_index()
-print(proposal_mesh_terms)
+print(proposal_mesh_terms.columns)
 
 # Function to duplicate the items in the Mesh_Terms column of the mapped_mesh_terms DataFrame
 def duplicate_mesh_terms(mesh_terms):
@@ -80,26 +80,36 @@ def duplicate_mesh_terms(mesh_terms):
     return mesh_terms
 mapped_mesh_terms['Mapped_Mesh_Terms'] = mapped_mesh_terms['Mapped_Mesh_Terms'].apply(duplicate_mesh_terms) # Apply the function to the Mesh_Terms column
 
+def triple_prop_terms(proposal_mesh_terms):
+    if pd.notna(proposal_mesh_terms) and proposal_mesh_terms != "":
+        return str(proposal_mesh_terms) + "; " + str(proposal_mesh_terms) + "; " + str(proposal_mesh_terms)
+    return proposal_mesh_terms
+
+proposal_mesh_terms['Proposal_Mesh_Terms'] = proposal_mesh_terms['Proposal_Mesh_Terms'].apply(triple_prop_terms) # Apply the function to the Mesh_Terms column
+
 # Merge the additional terms with the combined faculty DataFrame
 merged_df1 = pd.merge(faculty_df, proposal_mesh_terms, on='Faculty', how='left') # Merge the faculty DataFrame with the proposal Mesh terms DataFrame
-merged_df1 = merged_df1.drop(columns = ['Faculty_Search_Name', 'Faculty_Author', 'Faculty_Author_Affiliation']) # Drop columns from the merged DataFrame
+print(merged_df1.columns)
+merged_df1 = merged_df1.drop(columns = ['Faculty_Author', 'Faculty_Author_Affiliation']) # Drop columns from the merged DataFrame
 combined_faculty_df = pd.merge(merged_df1, mapped_mesh_terms, on = "Faculty", how='left') # Merge the combined faculty DataFrame with the mapped Mesh terms DataFrame
 
 # Combine the three MeSH Terms columns into a new column 'Combined_Mesh_Terms'
 # Ensure all columns exist and handle missing values
 # Ensure all columns exist and handle missing values
-combined_faculty_df['Pub_Mesh_Terms'] = combined_faculty_df['Pub_Mesh_Terms'].fillna('')
+print(combined_faculty_df.columns)
+# combined_faculty_df['Pub_Mesh_Terms'] = combined_faculty_df['Pub_Mesh_Terms'].fillna('')
 combined_faculty_df['Proposal_Mesh_Terms'] = combined_faculty_df['Proposal_Mesh_Terms'].fillna('')
 combined_faculty_df['Mapped_Mesh_Terms'] = combined_faculty_df['Mapped_Mesh_Terms'].fillna('')
 
 # Concatenate the columns
-combined_faculty_df['Combined_Mesh_Terms'] = combined_faculty_df['Pub_Mesh_Terms'] + '; ' + combined_faculty_df['Proposal_Mesh_Terms'] + '; ' + combined_faculty_df['Mapped_Mesh_Terms']
+combined_faculty_df['Combined_Mesh_Terms'] = combined_faculty_df['Proposal_Mesh_Terms'] + '; ' + combined_faculty_df['Mapped_Mesh_Terms']
 
 # Remove leading and trailing semicolons and spaces
 combined_faculty_df['Combined_Mesh_Terms'] = combined_faculty_df['Combined_Mesh_Terms'].str.strip('; ')
 
 # Drop the individual MeSH Terms columns
-combined_faculty_df = combined_faculty_df.drop(columns=['Pub_Mesh_Terms', 'Proposal_Mesh_Terms', 'Mapped_Mesh_Terms', 'PMIDs']) 
+print(combined_faculty_df.columns)
+combined_faculty_df = combined_faculty_df.drop(columns=['Proposal_Mesh_Terms', 'Mapped_Mesh_Terms', 'PMIDs']) 
 
 """ # Rename individual columns to preserve them
 print(combined_faculty_df.columns)

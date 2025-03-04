@@ -209,6 +209,28 @@ def calculate_normalized_scores(faculty_string, top_items):
 combined_faculty_df['Normalized_Scores'] = combined_faculty_df['Combined_Mesh_Terms'].apply(lambda x: calculate_normalized_scores(x, top_items))
 ##### print(combined_faculty_df['Faculty'], combined_faculty_df['Combined_Mesh_Terms'])
 
+def calculate_top_mesh_terms(faculty_mesh_terms_dict):
+    for faculty, mesh_terms in faculty_mesh_terms_dict.items():
+        if mesh_terms:
+            term_counts = Counter(mesh_terms)
+            top_terms = term_counts.most_common(3)
+            print(f"{faculty}: ", end="")
+            for i, (term, count) in enumerate(top_terms):
+                print(f"{term}", end="")
+            print()
+        else:
+            print(f"No MeSH terms found for {faculty}.")
+
+# Assuming combined_faculty_df['Combined_Mesh_Terms'] contains semicolon-separated MeSH terms:
+combined_faculty_df['Mesh_Terms_List'] = combined_faculty_df['Combined_Mesh_Terms'].str.split(';')
+
+#remove whitespace
+combined_faculty_df['Mesh_Terms_List'] = combined_faculty_df['Mesh_Terms_List'].apply(lambda x: [item.strip() for item in x] if isinstance(x, list) else [])
+
+# Create a dictionary with Faculty_Full_Name as keys and Mesh_Terms_List as values
+faculty_mesh_terms_dict = dict(zip(combined_faculty_df['Faculty_Full_Name'], combined_faculty_df['Mesh_Terms_List']))
+
+calculate_top_mesh_terms(faculty_mesh_terms_dict)
 
 def get_unique_terms(combined_faculty_df): 
     unique_words = {}

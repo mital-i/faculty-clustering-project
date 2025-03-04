@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import streamlit as st
 from sklearn.decomposition import PCA
 import umap
 from umap import UMAP

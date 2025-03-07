@@ -42,25 +42,25 @@ plt.plot(np.cumsum(explained_variance_ratio))
 plt.xlabel('Number of Components')
 plt.ylabel('Variance (%)')
 plt.title('Explained Variance')
-plt.show()
+st.pyplot(plt)
 
 # PCA scatter plot
 pca_df = pd.DataFrame(pca_result, columns=[f'PC{i+1}' for i in range(pca_result.shape[1])])
 fig = px.scatter(pca_df, x='PC1', y='PC2')
-# fig.show()
+st.plotly_chart(fig)
 
 # UMAP 2D
 umap_2d_result = UMAP().fit_transform(numeric_data)
 umap_2d_df = pd.DataFrame(umap_2d_result, columns=["umap_1", "umap_2"])
 umap_2d_df['Faculty'] = raw_data['Faculty']
 fig = px.scatter(umap_2d_df, x="umap_1", y="umap_2", title="UMAP", hover_data=['Faculty'])
-fig.show()
+st.plotly_chart(fig)
 
 # UMAP 3D
 umap_3d_result = UMAP(n_components=2).fit_transform(numeric_data)
 umap_3d_df = pd.DataFrame(umap_3d_result, columns=["umap_x", "umap_y"])
 fig = go.Figure(data=[go.Scatter3d(x=umap_3d_df["umap_x"], y=umap_3d_df["umap_y"], mode='markers')])
-# fig.show()
+st.plotly_chart(fig)
 
 # t-SNE
 tsne = TSNE(n_components=2, perplexity=25)
@@ -68,7 +68,7 @@ tsne_result = tsne.fit_transform(numeric_data)
 tsne_df = pd.DataFrame(tsne_result, columns=["tsne_1", "tsne_2"])
 tsne_df['Faculty'] = raw_data['Faculty']
 fig = px.scatter(tsne_df, x="tsne_1", y="tsne_2", title="t-SNE", hover_data=['Faculty'])
-fig.show()
+st.plotly_chart(fig)
 
 # UMAP on PCA components
 num_pca_components = 2
@@ -77,16 +77,16 @@ umap_pca_result = UMAP().fit_transform(pca_scores)
 umap_pca_df = pd.DataFrame(umap_pca_result, columns=["umap_1", "umap_2"])
 umap_pca_df['Faculty'] = raw_data['Faculty']
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", title="UMAP on PCA Components", hover_data=['Faculty'])
-fig.show()
+st.plotly_chart(fig)
 
 # UMAP on varying PCA components (1 component)
-for num_components in range(1, 2):
+for num_components in range(1, 31):
     pca_scores = pca_result[:, :num_components]
     umap_result = UMAP().fit_transform(pca_scores)
     umap_df_pca_var = pd.DataFrame(umap_result, columns=["umap_1", "umap_2"])
     umap_df_pca_var['Faculty'] = raw_data['Faculty']
     fig = px.scatter(umap_df_pca_var, x="umap_1", y="umap_2", title=f"UMAP with {num_components} PCA Components", hover_data=['Faculty'])
-    fig.show()
+    st.plotly_chart(fig)
 
 # DBSCAN clustering
 knn = NearestNeighbors(n_neighbors=8)
@@ -95,13 +95,13 @@ distances, indices = knn.kneighbors(pca_scores)
 dbscan = DBSCAN(eps=0.05, min_samples=2).fit(pca_scores)
 umap_pca_df['cluster'] = dbscan.labels_
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with Clusters", hover_data=['Faculty'])
-fig.show()
+st.plotly_chart(fig)
 
 # K-means clustering
 kmeans = KMeans(n_clusters=12, random_state=123).fit(pca_scores)
 umap_pca_df['cluster'] = kmeans.labels_
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with K-means Clusters", hover_data=['Faculty'])
-fig.show()
+st.plotly_chart(fig)
 
 # Silhouette score for optimal K
 def calculate_silhouette_score(data, k):
@@ -118,7 +118,7 @@ plt.plot(k_values, silhouette_values, 'b*-')
 plt.xlabel('Number of clusters K')
 plt.ylabel('Average Silhouette Width')
 plt.title('Silhouette Score for Different K')
-plt.show()
+st.pyplot(plt)
 
 # ANOVA and feature significance
 filtered_data = pd.DataFrame(numeric_data)
@@ -139,7 +139,7 @@ print("Significant features:", significant_features)
 # Final UMAP with K-means clusters
 umap_pca_df['Faculty'] = raw_data['Faculty']
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with K-means Clusters", hover_data=['Faculty'])
-fig.show()
+st.plotly_chart(fig)
 
 # Save outputs
 output_path = '/Users/mitalimittal/Downloads/faculty-mapped-mesh-terms'

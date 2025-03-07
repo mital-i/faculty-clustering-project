@@ -19,144 +19,139 @@ from statsmodels.stats.multitest import multipletests
 import os
 import kaleido
 
-# Import raw data matrix
-rawData = pd.read_excel('/Users/mitalimittal/Downloads/faculty-mapped-mesh-terms/mesh_terms_matrix_5yrs_and_keywords.xlsx', index_col = 'Faculty')
-rawData.reset_index(inplace=True) 
-numeric_data = rawData.drop(columns=['Faculty'])
-faculty_column = pd.read_excel('/Users/mitalimittal/Downloads/faculty-mapped-mesh-terms/mesh_terms_matrix_5yrs_and_keywords.xlsx', usecols=['Faculty'])
-# Remove spaces from column names
-rawData.columns = rawData.columns.str.replace(' ', '_').str.replace('-', '_').str.replace(',', '_')
+# Load raw data
+data_path = '/Users/mitalimittal/Downloads/faculty-mapped-mesh-terms/mesh_terms_matrix_5yrs_and_keywords.xlsx'
+raw_data = pd.read_excel(data_path, index_col='Faculty')
+raw_data.reset_index(inplace=True)
 
+# Extract numeric data and faculty column
+numeric_data = raw_data.drop(columns=['Faculty'])
+faculty_column = pd.read_excel(data_path, usecols=['Faculty'])
+
+# Clean column names
+raw_data.columns = raw_data.columns.str.replace(' ', '_').str.replace('-', '_').str.replace(',', '_')
+
+# PCA
 pca = PCA()
-pca_data = pca.fit_transform(numeric_data)
+pca_result = pca.fit_transform(numeric_data)
 
 # Visualize explained variance
-explained_variance = pca.explained_variance_ratio_
+explained_variance_ratio = pca.explained_variance_ratio_
 plt.figure()
-plt.plot(np.cumsum(explained_variance))
+plt.plot(np.cumsum(explained_variance_ratio))
 plt.xlabel('Number of Components')
-plt.ylabel('Variance (%)') 
+plt.ylabel('Variance (%)')
 plt.title('Explained Variance')
 plt.show()
 
 # PCA scatter plot
-pca_df = pd.DataFrame(pca_data, columns=[f'PC{i+1}' for i in range(pca_data.shape[1])])
+pca_df = pd.DataFrame(pca_result, columns=[f'PC{i+1}' for i in range(pca_result.shape[1])])
 fig = px.scatter(pca_df, x='PC1', y='PC2')
 # fig.show()
 
-umap_data = UMAP().fit_transform(numeric_data)
-
-# 2D UMAP plot
-umap_df = pd.DataFrame(umap_data, columns=["V1", "V2"])
-umap_df['Faculty'] = rawData['Faculty']
-fig = px.scatter(umap_df, x="V1", y="V2", title="UMAP", hover_data=['Faculty'])
+# UMAP 2D
+umap_2d_result = UMAP().fit_transform(numeric_data)
+umap_2d_df = pd.DataFrame(umap_2d_result, columns=["umap_1", "umap_2"])
+umap_2d_df['Faculty'] = raw_data['Faculty']
+fig = px.scatter(umap_2d_df, x="umap_1", y="umap_2", title="UMAP", hover_data=['Faculty'])
 fig.show()
 
-# 3D UMAP plot
-umap3_data = UMAP(n_components=2).fit_transform(numeric_data)
-layout = pd.DataFrame(umap3_data, columns=["X1", "X2"])
-fig = go.Figure(data=[go.Scatter3d(x=layout["X1"], y=layout["X2"],mode='markers')])
+# UMAP 3D
+umap_3d_result = UMAP(n_components=2).fit_transform(numeric_data)
+umap_3d_df = pd.DataFrame(umap_3d_result, columns=["umap_x", "umap_y"])
+fig = go.Figure(data=[go.Scatter3d(x=umap_3d_df["umap_x"], y=umap_3d_df["umap_y"], mode='markers')])
 # fig.show()
 
+# t-SNE
 tsne = TSNE(n_components=2, perplexity=25)
 tsne_result = tsne.fit_transform(numeric_data)
-tsne_df = pd.DataFrame(tsne_result, columns=["V1", "V2"])
-tsne_df['Faculty'] = rawData['Faculty']
-fig = px.scatter(tsne_df, x="V1", y="V2", title="t-SNE", hover_data=['Faculty'])
+tsne_df = pd.DataFrame(tsne_result, columns=["tsne_1", "tsne_2"])
+tsne_df['Faculty'] = raw_data['Faculty']
+fig = px.scatter(tsne_df, x="tsne_1", y="tsne_2", title="t-SNE", hover_data=['Faculty'])
 fig.show()
 
-pca_result = PCA().fit_transform(numeric_data)
-num_components = 2
-pca_scores = pca_result[:, :num_components]
-
-umap_result = UMAP().fit_transform(pca_scores)
-umapDf_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
-umapDf_pca['Faculty'] = rawData['Faculty']
-fig = px.scatter(umapDf_pca, x="V1", y="V2", title="UMAP on PCA Components", hover_data=['Faculty'])
+# UMAP on PCA components
+num_pca_components = 2
+pca_scores = pca_result[:, :num_pca_components]
+umap_pca_result = UMAP().fit_transform(pca_scores)
+umap_pca_df = pd.DataFrame(umap_pca_result, columns=["umap_1", "umap_2"])
+umap_pca_df['Faculty'] = raw_data['Faculty']
+fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", title="UMAP on PCA Components", hover_data=['Faculty'])
 fig.show()
 
+# UMAP on varying PCA components (1 component)
 for num_components in range(1, 2):
     pca_scores = pca_result[:, :num_components]
     umap_result = UMAP().fit_transform(pca_scores)
-    umapDf_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
-    umapDf_pca['Faculty'] = rawData['Faculty']
-    fig = px.scatter(umapDf_pca, x="V1", y="V2", title=f"UMAP with {num_components} PCA Components", hover_data=['Faculty'])
+    umap_df_pca_var = pd.DataFrame(umap_result, columns=["umap_1", "umap_2"])
+    umap_df_pca_var['Faculty'] = raw_data['Faculty']
+    fig = px.scatter(umap_df_pca_var, x="umap_1", y="umap_2", title=f"UMAP with {num_components} PCA Components", hover_data=['Faculty'])
     fig.show()
 
+# DBSCAN clustering
 knn = NearestNeighbors(n_neighbors=8)
 knn.fit(pca_scores)
 distances, indices = knn.kneighbors(pca_scores)
-dbs = DBSCAN(eps=0.05, min_samples=2).fit(pca_scores)
-umapDf_pca['cluster'] = dbs.labels_
-
-fig = px.scatter(umapDf_pca, x="V1", y="V2", color='cluster', title="UMAP with Clusters", hover_data=['Faculty'])
+dbscan = DBSCAN(eps=0.05, min_samples=2).fit(pca_scores)
+umap_pca_df['cluster'] = dbscan.labels_
+fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with Clusters", hover_data=['Faculty'])
 fig.show()
-
-umapDf_pca['Faculty'] = rawData['Faculty']
 
 # K-means clustering
 kmeans = KMeans(n_clusters=12, random_state=123).fit(pca_scores)
-umapDf_pca['cluster'] = kmeans.labels_
-
-fig = px.scatter(umapDf_pca, x="V1", y="V2", color='cluster', title="UMAP with K-means Clusters", hover_data=['Faculty'])
+umap_pca_df['cluster'] = kmeans.labels_
+fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with K-means Clusters", hover_data=['Faculty'])
 fig.show()
 
-# Identify optimal number of clusters using silhouette score
-def avg_silhouette(data, k):
+# Silhouette score for optimal K
+def calculate_silhouette_score(data, k):
     kmeans = KMeans(n_clusters=k, random_state=123).fit(data)
     labels = kmeans.labels_
-    sil_score = silhouette_score(data, labels)
-    return sil_score
+    return silhouette_score(data, labels)
 
 k_values = range(2, 21)
-
-umapDf_pca = umapDf_pca.drop(columns=['Faculty'])
-sil_values = [avg_silhouette(umapDf_pca, k) for k in k_values]
+umap_pca_no_faculty = umap_pca_df.drop(columns=['Faculty'])
+silhouette_values = [calculate_silhouette_score(umap_pca_no_faculty, k) for k in k_values]
 
 plt.figure()
-plt.plot(k_values, sil_values, 'b*-')
+plt.plot(k_values, silhouette_values, 'b*-')
 plt.xlabel('Number of clusters K')
 plt.ylabel('Average Silhouette Width')
 plt.title('Silhouette Score for Different K')
 plt.show()
 
-filtered_data_df = pd.DataFrame(numeric_data)
-filtered_data_df['cluster'] = kmeans.labels_
+# ANOVA and feature significance
+filtered_data = pd.DataFrame(numeric_data)
+filtered_data['cluster'] = kmeans.labels_
+filtered_data.columns = filtered_data.columns.str.replace(' ', '_').str.replace(',', '_').str.replace('-', '_')
+feature_names = filtered_data.columns[:-1]
 
-def get_anova_pvalues(feature, data):
+def calculate_anova_pvalue(feature, data):
     model = ols(f"{feature} ~ C(cluster)", data=data).fit()
     anova_table = sm.stats.anova_lm(model, typ=2)
     return anova_table["PR(>F)"][0]
 
-filtered_data_df.columns = filtered_data_df.columns.str.replace(' ', '_').str.replace(',', '_').str.replace('-', '_')
-feature_names = filtered_data_df.columns[:-1]
-# print(feature_names), print(filtered_data_df.columns)
-# print(filtered_data_df.dtypes)
-pvalues = {feature: get_anova_pvalues(feature, filtered_data_df) for feature in feature_names}
-
-# Adjust p-values using Benjamini-Hochberg method
-_, p_adjusted, _, _ = multipletests(list(pvalues.values()), method='fdr_bh')
+p_values = {feature: calculate_anova_pvalue(feature, filtered_data) for feature in feature_names}
+_, p_adjusted, _, _ = multipletests(list(p_values.values()), method='fdr_bh')
 significant_features = [feature for feature, pval in zip(feature_names, p_adjusted) if pval < 0.05]
 print("Significant features:", significant_features)
 
-# Plot UMAP result with clusters
-umapDf_pca['Faculty'] = rawData['Faculty']
-fig = px.scatter(umapDf_pca, x="V1", y="V2", color='cluster', title="UMAP with K-means Clusters", hover_data=['Faculty'])
+# Final UMAP with K-means clusters
+umap_pca_df['Faculty'] = raw_data['Faculty']
+fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with K-means Clusters", hover_data=['Faculty'])
 fig.show()
-umapDf_pca = umapDf_pca.drop(columns=['Faculty'])
 
 # Save outputs
-path = '/Users/mitalimittal/Downloads/faculty-mapped-mesh-terms'
-sig_df_path = os.path.join(path, "Significant_terms_per_cluster.csv")
-cluster_df_path = os.path.join(path, "Professors_in_clusters.csv")
-fig_path = os.path.join(path, "UMAP_professors_clusters.pdf")
+output_path = '/Users/mitalimittal/Downloads/faculty-mapped-mesh-terms'
+significant_features_path = os.path.join(output_path, "Significant_terms_per_cluster.csv")
+professors_clusters_path = os.path.join(output_path, "Professors_in_clusters.csv")
 
-umapDf_pca = umapDf_pca.join(faculty_column, how='left')
-umapDf_pca = umapDf_pca.groupby('cluster')['Faculty'].apply(list).reset_index()
-umapDf_pca.to_csv(cluster_df_path,index=True)
+umap_pca_df_grouped = umap_pca_df.drop(columns=['umap_1', 'umap_2'])
+umap_pca_df_grouped = umap_pca_df_grouped.groupby('cluster')['Faculty'].apply(list).reset_index()
+umap_pca_df_grouped.to_csv(professors_clusters_path, index=True)
 
-sig_df = pd.DataFrame({
+significant_df = pd.DataFrame({
     'Feature': significant_features,
     'P-Value Adjusted': p_adjusted[:len(significant_features)]
 })
-sig_df.to_csv(sig_df_path, index=True)
+significant_df.to_csv(significant_features_path, index=True)

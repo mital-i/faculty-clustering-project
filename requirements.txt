@@ -9,7 +9,7 @@ bcolz-zipline==1.2.12
 bidict==0.23.1
 build==1.2.2.post1
 cachetools==5.3.2
-clyent==1.2.2
+clyent
 CoLT5-attention==0.10.20
 conda-verify==3.4.2
 curated-tokenizers==0.0.9

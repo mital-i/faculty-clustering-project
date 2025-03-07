@@ -20,7 +20,7 @@ import os
 import kaleido
 
 # Load raw data
-data_path = '/Users/mitalimittal/Downloads/faculty-mapped-mesh-terms/mesh_terms_matrix_5yrs_and_keywords.xlsx'
+data_path = 'mesh_terms_matrix_5yrs_and_keywords.xlsx'
 raw_data = pd.read_excel(data_path, index_col='Faculty')
 raw_data.reset_index(inplace=True)
 
@@ -142,7 +142,7 @@ fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UM
 st.plotly_chart(fig)
 
 # Save outputs
-output_path = '/Users/mitalimittal/Downloads/faculty-mapped-mesh-terms'
+output_path = 'faculty-mapped-mesh-terms'
 significant_features_path = os.path.join(output_path, "Significant_terms_per_cluster.csv")
 professors_clusters_path = os.path.join(output_path, "Professors_in_clusters.csv")
 

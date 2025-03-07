@@ -42,7 +42,7 @@ plt.plot(np.cumsum(explained_variance_ratio))
 plt.xlabel('Number of Components')
 plt.ylabel('Variance (%)')
 plt.title('Explained Variance')
-st.pyplot(plt)
+st.pyplot(plt.gcf())
 
 # PCA scatter plot
 pca_df = pd.DataFrame(pca_result, columns=[f'PC{i+1}' for i in range(pca_result.shape[1])])

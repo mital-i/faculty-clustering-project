@@ -47,21 +47,17 @@ for index, row in faculty_df.iterrows():
 faculty_proposal_mesh_terms_df['Proposal_Mesh_Terms'] = faculty_proposal_mesh_terms_df['Proposal_Mesh_Terms'].astype(str)
 proposal_mesh_terms_df = faculty_proposal_mesh_terms_df.groupby('Faculty')['Proposal_Mesh_Terms'].agg(lambda x: '; '.join(x)).reset_index()
 
-# Duplicate mapped MeSH terms
-def duplicate_mesh_terms(mesh_terms):
+def repeat_mesh_terms(mesh_terms, repetitions):
     if pd.notna(mesh_terms) and mesh_terms != "":
-        return str(mesh_terms) + "; " + str(mesh_terms)
+        repeated_terms = "; ".join([str(mesh_terms)] * repetitions)
+        return repeated_terms
     return mesh_terms
 
-mapped_mesh_terms_df['Mapped_Mesh_Terms'] = mapped_mesh_terms_df['Mapped_Mesh_Terms'].apply(duplicate_mesh_terms)
+# Apply doubling
+mapped_mesh_terms_df['Mapped_Mesh_Terms'] = mapped_mesh_terms_df['Mapped_Mesh_Terms'].apply(lambda x: repeat_mesh_terms(x, 2))
 
-# Triple proposal MeSH terms
-def triple_prop_terms(proposal_mesh_terms):
-    if pd.notna(proposal_mesh_terms) and proposal_mesh_terms != "":
-        return str(proposal_mesh_terms) + "; " + str(proposal_mesh_terms) + "; " + str(proposal_mesh_terms)
-    return proposal_mesh_terms
-
-proposal_mesh_terms_df['Proposal_Mesh_Terms'] = proposal_mesh_terms_df['Proposal_Mesh_Terms'].apply(triple_prop_terms)
+# Apply tripling
+proposal_mesh_terms_df['Proposal_Mesh_Terms'] = proposal_mesh_terms_df['Proposal_Mesh_Terms'].apply(lambda x: repeat_mesh_terms(x, 3))
 
 # Merge dataframes
 merged_df = pd.merge(faculty_df, proposal_mesh_terms_df, on='Faculty', how='left')

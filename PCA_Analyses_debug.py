@@ -154,4 +154,5 @@ significant_df = pd.DataFrame({
     'Feature': significant_features,
     'P-Value Adjusted': p_adjusted[:len(significant_features)]
 })
-significant_df.to_csv(significant_features_path, index=True)
+# uncomment when not running streamlit
+# significant_df.to_csv(significant_features_path, index=True)

@@ -71,7 +71,7 @@ fig.update_layout(plot_bgcolor='#255799')
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
 fig.update_xaxes(showticklabels=False)
-fig.update_yaxes(showticklabels=False))
+fig.update_yaxes(showticklabels=False)
 fig.show()
 
 pca_result = PCA().fit_transform(numeric_data)

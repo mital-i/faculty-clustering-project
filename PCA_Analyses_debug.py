@@ -142,17 +142,17 @@ fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UM
 st.plotly_chart(fig, key="final_umap_cluster_plot")
 
 # Save outputs
-output_path = 'faculty-mapped-mesh-terms'
-significant_features_path = os.path.join(output_path, "Significant_terms_per_cluster.csv")
-professors_clusters_path = os.path.join(output_path, "Professors_in_clusters.csv")
+# output_path = 'faculty-mapped-mesh-terms'
+# significant_features_path = os.path.join(output_path, "Significant_terms_per_cluster.csv")
+# professors_clusters_path = os.path.join(output_path, "Professors_in_clusters.csv")
 
-umap_pca_df_grouped = umap_pca_df.drop(columns=['umap_1', 'umap_2'])
-umap_pca_df_grouped = umap_pca_df_grouped.groupby('cluster')['Faculty'].apply(list).reset_index()
-umap_pca_df_grouped.to_csv(professors_clusters_path, index=True)
+# umap_pca_df_grouped = umap_pca_df.drop(columns=['umap_1', 'umap_2'])
+# umap_pca_df_grouped = umap_pca_df_grouped.groupby('cluster')['Faculty'].apply(list).reset_index()
+# umap_pca_df_grouped.to_csv(professors_clusters_path, index=True)
 
-significant_df = pd.DataFrame({
-    'Feature': significant_features,
-    'P-Value Adjusted': p_adjusted[:len(significant_features)]
-})
+# significant_df = pd.DataFrame({
+#     'Feature': significant_features,
+#     'P-Value Adjusted': p_adjusted[:len(significant_features)]
+# })
 # uncomment when not running streamlit
 # significant_df.to_csv(significant_features_path, index=True)

@@ -72,7 +72,7 @@ tsne = TSNE(n_components=2, perplexity=25)
 tsne_result = tsne.fit_transform(numeric_data)
 tsne_df = pd.DataFrame(tsne_result, columns=["tsne_1", "tsne_2"])
 tsne_df['Faculty'] = raw_data['Faculty']
-fig = px.scatter(tsne_df, x="tsne_1", y="tsne_2", title="t-SNE", hover_name="Faculty", hover_data={"umap_1": False, "umap_2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
+fig = px.scatter(tsne_df, x="tsne_1", y="tsne_2", title="t-SNE", hover_name="Faculty", hover_data={"tsne_1": False, "tsne_2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
 fig.update_layout(plot_bgcolor='#255799')
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")

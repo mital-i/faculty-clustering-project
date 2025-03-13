@@ -139,7 +139,7 @@ print("Significant features:", significant_features)
 # Final UMAP with K-means clusters
 umap_pca_df['Faculty'] = raw_data['Faculty']
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with K-means Clusters", hover_data=['Faculty'])
-st.plotly_chart(fig)
+st.plotly_chart(fig, key="final_umap_cluster_plot")
 
 # Save outputs
 output_path = 'faculty-mapped-mesh-terms'

@@ -54,6 +54,11 @@ umap_2d_result = UMAP().fit_transform(numeric_data)
 umap_2d_df = pd.DataFrame(umap_2d_result, columns=["umap_1", "umap_2"])
 umap_2d_df['Faculty'] = raw_data['Faculty']
 fig = px.scatter(umap_2d_df, x="umap_1", y="umap_2", title="UMAP", hover_data=['Faculty'])
+fig.update_layout(plot_bgcolor='#255799')
+fig.update_xaxes(title_text="")
+fig.update_yaxes(title_text="")
+fig.update_xaxes(showticklabels=False)
+fig.update_yaxes(showticklabels=False)
 st.plotly_chart(fig)
 
 # UMAP 3D
@@ -68,6 +73,11 @@ tsne_result = tsne.fit_transform(numeric_data)
 tsne_df = pd.DataFrame(tsne_result, columns=["tsne_1", "tsne_2"])
 tsne_df['Faculty'] = raw_data['Faculty']
 fig = px.scatter(tsne_df, x="tsne_1", y="tsne_2", title="t-SNE", hover_data=['Faculty'])
+fig.update_layout(plot_bgcolor='#255799')
+fig.update_xaxes(title_text="")
+fig.update_yaxes(title_text="")
+fig.update_xaxes(showticklabels=False)
+fig.update_yaxes(showticklabels=False)
 st.plotly_chart(fig)
 
 # UMAP on PCA components
@@ -77,6 +87,11 @@ umap_pca_result = UMAP().fit_transform(pca_scores)
 umap_pca_df = pd.DataFrame(umap_pca_result, columns=["umap_1", "umap_2"])
 umap_pca_df['Faculty'] = raw_data['Faculty']
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", title="UMAP on PCA Components", hover_data=['Faculty'])
+fig.update_layout(plot_bgcolor='#255799')
+fig.update_xaxes(title_text="")
+fig.update_yaxes(title_text="")
+fig.update_xaxes(showticklabels=False)
+fig.update_yaxes(showticklabels=False)
 st.plotly_chart(fig)
 
 # UMAP on varying PCA components (1 component)
@@ -86,6 +101,11 @@ for num_components in range(1, 31):
     umap_df_pca_var = pd.DataFrame(umap_result, columns=["umap_1", "umap_2"])
     umap_df_pca_var['Faculty'] = raw_data['Faculty']
     fig = px.scatter(umap_df_pca_var, x="umap_1", y="umap_2", title=f"UMAP with {num_components} PCA Components", hover_data=['Faculty'])
+    fig.update_layout(plot_bgcolor='#255799')
+    fig.update_xaxes(title_text="")
+    fig.update_yaxes(title_text="")
+    fig.update_xaxes(showticklabels=False)
+    fig.update_yaxes(showticklabels=False)
     st.plotly_chart(fig)
 
 # DBSCAN clustering
@@ -95,12 +115,22 @@ distances, indices = knn.kneighbors(pca_scores)
 dbscan = DBSCAN(eps=0.05, min_samples=2).fit(pca_scores)
 umap_pca_df['cluster'] = dbscan.labels_
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with Clusters", hover_data=['Faculty'])
+fig.update_layout(plot_bgcolor='#255799')
+fig.update_xaxes(title_text="")
+fig.update_yaxes(title_text="")
+fig.update_xaxes(showticklabels=False)
+fig.update_yaxes(showticklabels=False)
 st.plotly_chart(fig)
 
 # K-means clustering
 kmeans = KMeans(n_clusters=12, random_state=123).fit(pca_scores)
 umap_pca_df['cluster'] = kmeans.labels_
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with K-means Clusters", hover_data=['Faculty'])
+fig.update_layout(plot_bgcolor='#255799')
+fig.update_xaxes(title_text="")
+fig.update_yaxes(title_text="")
+fig.update_xaxes(showticklabels=False)
+fig.update_yaxes(showticklabels=False)
 st.plotly_chart(fig)
 
 # Silhouette score for optimal K
@@ -139,6 +169,11 @@ print("Significant features:", significant_features)
 # Final UMAP with K-means clusters
 umap_pca_df['Faculty'] = raw_data['Faculty']
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with K-means Clusters", hover_data=['Faculty'])
+fig.update_layout(plot_bgcolor='#255799')
+fig.update_xaxes(title_text="")
+fig.update_yaxes(title_text="")
+fig.update_xaxes(showticklabels=False)
+fig.update_yaxes(showticklabels=False)
 st.plotly_chart(fig, key="final_umap_cluster_plot")
 
 # Save outputs

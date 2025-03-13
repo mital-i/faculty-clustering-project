@@ -53,6 +53,7 @@ st.plotly_chart(fig)
 umap_2d_result = UMAP().fit_transform(numeric_data)
 umap_2d_df = pd.DataFrame(umap_2d_result, columns=["umap_1", "umap_2"])
 umap_2d_df['Faculty'] = raw_data['Faculty']
+umap_df['Faculty_Full_Name'] = rawData['Faculty_Full_Name']
 fig = px.scatter(umap_2d_df, x="umap_1", y="umap_2", title="UMAP", hover_name="Faculty_Full_Name", hover_data={"V1": False, "V2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
 fig.update_layout(plot_bgcolor='#255799')
 fig.update_xaxes(title_text="")

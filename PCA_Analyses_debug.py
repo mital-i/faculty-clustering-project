@@ -54,18 +54,21 @@ umap_2d_result = UMAP().fit_transform(numeric_data)
 umap_2d_df = pd.DataFrame(umap_2d_result, columns=["umap_1", "umap_2"])
 umap_2d_df['Faculty'] = raw_data['Faculty']
 fig = px.scatter(umap_2d_df, x="umap_1", y="umap_2", title="UMAP", hover_name="Faculty", hover_data={"umap_1": False, "umap_2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
-fig.update_layout(plot_bgcolor='#255799')
+fig.update_layout(plot_bgcolor='#255799', title={
+        'text': "UMAP",
+        'font': {'size': 24},
+})
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
 fig.update_xaxes(showticklabels=False)
 fig.update_yaxes(showticklabels=False)
 st.plotly_chart(fig)
 
-# UMAP 3D
-umap_3d_result = UMAP(n_components=2).fit_transform(numeric_data)
-umap_3d_df = pd.DataFrame(umap_3d_result, columns=["umap_x", "umap_y"])
-fig = go.Figure(data=[go.Scatter3d(x=umap_3d_df["umap_x"], y=umap_3d_df["umap_y"], mode='markers')])
-st.plotly_chart(fig)
+# # UMAP 3D
+# umap_3d_result = UMAP(n_components=2).fit_transform(numeric_data)
+# umap_3d_df = pd.DataFrame(umap_3d_result, columns=["umap_x", "umap_y"])
+# fig = go.Figure(data=[go.Scatter3d(x=umap_3d_df["umap_x"], y=umap_3d_df["umap_y"], mode='markers')])
+# st.plotly_chart(fig)
 
 # t-SNE
 tsne = TSNE(n_components=2, perplexity=25)
@@ -73,7 +76,10 @@ tsne_result = tsne.fit_transform(numeric_data)
 tsne_df = pd.DataFrame(tsne_result, columns=["tsne_1", "tsne_2"])
 tsne_df['Faculty'] = raw_data['Faculty']
 fig = px.scatter(tsne_df, x="tsne_1", y="tsne_2", title="t-SNE", hover_name="Faculty", hover_data={"tsne_1": False, "tsne_2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
-fig.update_layout(plot_bgcolor='#255799')
+fig.update_layout(plot_bgcolor='#255799', title={
+        'text': "t-SNE",
+        'font': {'size': 24},
+})
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
 fig.update_xaxes(showticklabels=False)
@@ -87,7 +93,10 @@ umap_pca_result = UMAP().fit_transform(pca_scores)
 umap_pca_df = pd.DataFrame(umap_pca_result, columns=["umap_1", "umap_2"])
 umap_pca_df['Faculty'] = raw_data['Faculty']
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", title="UMAP on PCA Components", hover_name="Faculty", hover_data={"umap_1": False, "umap_2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
-fig.update_layout(plot_bgcolor='#255799')
+fig.update_layout(plot_bgcolor='#255799', title={
+        'text': "UMAP on PCA Components",
+        'font': {'size': 24},
+})
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
 fig.update_xaxes(showticklabels=False)
@@ -95,13 +104,16 @@ fig.update_yaxes(showticklabels=False)
 st.plotly_chart(fig)
 
 # UMAP on varying PCA components (1 component)
-for num_components in range(1, 31):
+for num_components in range(1, 1):
     pca_scores = pca_result[:, :num_components]
     umap_result = UMAP().fit_transform(pca_scores)
     umap_df_pca_var = pd.DataFrame(umap_result, columns=["umap_1", "umap_2"])
     umap_df_pca_var['Faculty'] = raw_data['Faculty']
     fig = px.scatter(umap_df_pca_var, x="umap_1", y="umap_2", title=f"UMAP with {num_components} PCA Components", hover_name="Faculty", hover_data={"umap_1": False, "umap_2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
-    fig.update_layout(plot_bgcolor='#255799')
+    fig.update_layout(plot_bgcolor='#255799', title={
+        'text': f"UMAP with {num_components} PCA Components",
+        'font': {'size': 24},
+    })
     fig.update_xaxes(title_text="")
     fig.update_yaxes(title_text="")
     fig.update_xaxes(showticklabels=False)
@@ -117,8 +129,11 @@ umap_pca_df['cluster'] = dbscan.labels_
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with Clusters", hover_name="Faculty", hover_data={"umap_1": False, "umap_2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
 fig.update_layout(
     plot_bgcolor='black',  # This sets the color of the plotting area (inside the axes)
-    paper_bgcolor='black'     # This sets the color of the entire figure background
-)
+    paper_bgcolor='black', 
+    title={
+        'text': "UMAP with Clusters",
+        'font': {'size': 24},
+})
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
 fig.update_xaxes(showticklabels=False)
@@ -131,8 +146,11 @@ umap_pca_df['cluster'] = kmeans.labels_
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with K-means Clusters", hover_name="Faculty", hover_data={"umap_1": False, "umap_2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
 fig.update_layout(
     plot_bgcolor='black',  # This sets the color of the plotting area (inside the axes)
-    paper_bgcolor='black'     # This sets the color of the entire figure background
-)
+    paper_bgcolor='black',     # This sets the color of the entire figure background
+    title={
+        'text': "UMAP with K-means Clusters",
+        'font': {'size': 24},
+})
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
 fig.update_xaxes(showticklabels=False)
@@ -177,8 +195,11 @@ umap_pca_df['Faculty'] = raw_data['Faculty']
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with K-means Clusters", hover_name="Faculty", hover_data={"umap_1": False, "umap_2": False}, width=800, height=800, color_discrete_sequence=['#000000'])
 fig.update_layout(
     plot_bgcolor='black',  # This sets the color of the plotting area (inside the axes)
-    paper_bgcolor='black'     # This sets the color of the entire figure background
-)
+    paper_bgcolor='black',     # This sets the color of the entire figure background
+    title={
+    'text': "UMAP with K-means Clusters",
+    'font': {'size': 24},
+})
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
 fig.update_xaxes(showticklabels=False)

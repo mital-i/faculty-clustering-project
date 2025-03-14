@@ -56,7 +56,7 @@ umap_2d_df['Faculty'] = raw_data['Faculty']
 fig = px.scatter(umap_2d_df, x="umap_1", y="umap_2", title="UMAP", hover_name="Faculty", hover_data={"umap_1": False, "umap_2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
 fig.update_layout(plot_bgcolor='#255799', title={
         'text': "UMAP",
-        'font': {'size': 24},
+        'font': {'size': 30},
 })
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
@@ -78,7 +78,7 @@ tsne_df['Faculty'] = raw_data['Faculty']
 fig = px.scatter(tsne_df, x="tsne_1", y="tsne_2", title="t-SNE", hover_name="Faculty", hover_data={"tsne_1": False, "tsne_2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
 fig.update_layout(plot_bgcolor='#255799', title={
         'text': "t-SNE",
-        'font': {'size': 24},
+        'font': {'size': 30},
 })
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
@@ -95,7 +95,7 @@ umap_pca_df['Faculty'] = raw_data['Faculty']
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", title="UMAP on PCA Components", hover_name="Faculty", hover_data={"umap_1": False, "umap_2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
 fig.update_layout(plot_bgcolor='#255799', title={
         'text': "UMAP on PCA Components",
-        'font': {'size': 24},
+        'font': {'size': 30},
 })
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
@@ -104,7 +104,7 @@ fig.update_yaxes(showticklabels=False)
 st.plotly_chart(fig)
 
 # UMAP on varying PCA components (1 component)
-for num_components in range(1, 1):
+for num_components in range(1, 31):
     pca_scores = pca_result[:, :num_components]
     umap_result = UMAP().fit_transform(pca_scores)
     umap_df_pca_var = pd.DataFrame(umap_result, columns=["umap_1", "umap_2"])
@@ -112,7 +112,7 @@ for num_components in range(1, 1):
     fig = px.scatter(umap_df_pca_var, x="umap_1", y="umap_2", title=f"UMAP with {num_components} PCA Components", hover_name="Faculty", hover_data={"umap_1": False, "umap_2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
     fig.update_layout(plot_bgcolor='#255799', title={
         'text': f"UMAP with {num_components} PCA Components",
-        'font': {'size': 24},
+        'font': {'size': 30},
     })
     fig.update_xaxes(title_text="")
     fig.update_yaxes(title_text="")
@@ -132,7 +132,7 @@ fig.update_layout(
     paper_bgcolor='black', 
     title={
         'text': "UMAP with Clusters",
-        'font': {'size': 24},
+        'font': {'size': 30},
 })
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
@@ -149,7 +149,7 @@ fig.update_layout(
     paper_bgcolor='black',     # This sets the color of the entire figure background
     title={
         'text': "UMAP with K-means Clusters",
-        'font': {'size': 24},
+        'font': {'size': 30},
 })
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
@@ -198,7 +198,7 @@ fig.update_layout(
     paper_bgcolor='black',     # This sets the color of the entire figure background
     title={
     'text': "UMAP with K-means Clusters",
-    'font': {'size': 24},
+    'font': {'size': 30},
 })
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")

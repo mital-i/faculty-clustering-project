@@ -95,7 +95,7 @@ fig.update_yaxes(showticklabels=False)
 st.plotly_chart(fig)
 
 # UMAP on varying PCA components (1 component)
-for num_components in range(1, 31):
+for num_components in range(1, 1):
     pca_scores = pca_result[:, :num_components]
     umap_result = UMAP().fit_transform(pca_scores)
     umap_df_pca_var = pd.DataFrame(umap_result, columns=["umap_1", "umap_2"])
@@ -170,7 +170,7 @@ print("Significant features:", significant_features)
 umap_pca_df['Faculty'] = raw_data['Faculty']
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with K-means Clusters", hover_name="Faculty", hover_data={"umap_1": False, "umap_2": False}, width=800, height=800, color_discrete_sequence=['#000000'])
 fig.update_layout(
-    plot_bgcolor='#255799',  # This sets the color of the plotting area (inside the axes)
+    plot_bgcolor='black',  # This sets the color of the plotting area (inside the axes)
     paper_bgcolor='black'     # This sets the color of the entire figure background
 )
 fig.update_xaxes(title_text="")

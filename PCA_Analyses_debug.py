@@ -115,7 +115,10 @@ distances, indices = knn.kneighbors(pca_scores)
 dbscan = DBSCAN(eps=0.05, min_samples=2).fit(pca_scores)
 umap_pca_df['cluster'] = dbscan.labels_
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with Clusters", hover_name="Faculty", hover_data={"umap_1": False, "umap_2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
-fig.update_layout(plot_bgcolor='#255799')
+fig.update_layout(
+    plot_bgcolor='black',  # This sets the color of the plotting area (inside the axes)
+    paper_bgcolor='black'     # This sets the color of the entire figure background
+)
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
 fig.update_xaxes(showticklabels=False)
@@ -126,7 +129,10 @@ st.plotly_chart(fig)
 kmeans = KMeans(n_clusters=12, random_state=123).fit(pca_scores)
 umap_pca_df['cluster'] = kmeans.labels_
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with K-means Clusters", hover_name="Faculty", hover_data={"umap_1": False, "umap_2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
-fig.update_layout(plot_bgcolor='#255799')
+fig.update_layout(
+    plot_bgcolor='black',  # This sets the color of the plotting area (inside the axes)
+    paper_bgcolor='black'     # This sets the color of the entire figure background
+)
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
 fig.update_xaxes(showticklabels=False)

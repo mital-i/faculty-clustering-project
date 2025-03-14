@@ -168,7 +168,7 @@ print("Significant features:", significant_features)
 
 # Final UMAP with K-means clusters
 umap_pca_df['Faculty'] = raw_data['Faculty']
-fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with K-means Clusters", hover_name="Faculty", hover_data={"umap_1": False, "umap_2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
+fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with K-means Clusters", hover_name="Faculty", hover_data={"umap_1": False, "umap_2": False}, width=800, height=800, color_discrete_sequence=['#000000'])
 fig.update_layout(plot_bgcolor='#255799')
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")

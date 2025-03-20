@@ -4,6 +4,7 @@ from Bio import Entrez
 from collections import Counter
 import re
 import ssl
+import time
 
 # Disable SSL verification
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -32,15 +33,19 @@ for index, row in faculty_df.iterrows():
     pmid_list = row['pmids']
     mesh_term_texts = []
     for pmid in pmid_list:
-        handle_mesh = Entrez.efetch(db="pubmed", id=pmid, retmode="xml")
+        handle_mesh = Entrez.efetch(db="pubmed", id=pmid, rettype="xml")
         record = Entrez.read(handle_mesh)
         if record["PubmedArticle"]:
             medline = record["PubmedArticle"][0]["MedlineCitation"]
             mesh_headings = medline.get("MeshHeadingList", [])
             for mesh_heading in mesh_headings:
-                descriptor_name = mesh_heading["DescriptorName"]
-                mesh_term_texts.append(descriptor_name)
+                descriptor_name_element = mesh_heading.get("DescriptorName")
+                if descriptor_name_element:
+                    descriptor_name = str(descriptor_name_element)  # Convert StringElement to string
+                    mesh_term_texts.append(descriptor_name)
         handle_mesh.close()
+        time.sleep(0.5)
+
     faculty_df.at[index, 'pub_mesh_terms'] = '; '.join(mesh_term_texts)
 
 # Process proposal MeSH terms
@@ -190,10 +195,3 @@ pca_matrix = combined_faculty_df.drop(combined_faculty_df.columns[1:36], axis=1)
 
 # Save PCA matrix to Excel
 pca_matrix.to_excel('mesh_terms_matrix_5yrs_and_keywords.xlsx', index=False)
-
-# Execute PCA analysis script
-try:
-    with open("PCA_Analyses.py") as file:
-        exec(file.read())
-except FileNotFoundError:
-    print("PCA_Analyses.py not found. Skipping execution.")le.read())

@@ -65,7 +65,7 @@ for faculty_full_name in umap_2d_df['Faculty_Full_Name']: #Use the full name col
 
 umap_2d_df['Top_Mesh_Terms'] = top_mesh_terms
 
-fig = px.scatter(umap_2d_df, x="umap_1", y="umap_2", title="UMAP", hover_name="Faculty_Full_Name", hover_data={"umap_1": False, "umap_2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
+fig = px.scatter(umap_2d_df, x="umap_1", y="umap_2", title="UMAP", hover_name="Faculty_Full_Name", hover_data={"umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#fecc07'])
 
 fig.update_layout(plot_bgcolor='#255799', title={
         'text': "UMAP",

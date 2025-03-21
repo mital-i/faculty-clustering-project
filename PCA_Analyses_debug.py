@@ -88,6 +88,7 @@ tsne = TSNE(n_components=2, perplexity=25)
 tsne_result = tsne.fit_transform(numeric_data)
 tsne_df = pd.DataFrame(tsne_result, columns=["tsne_1", "tsne_2"])
 tsne_df['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
+tsne_df['Top_Mesh_Terms'] = top_mesh_terms
 fig = px.scatter(tsne_df, x="tsne_1", y="tsne_2", title="t-SNE", hover_name="Faculty_Full_Name", hover_data={"tsne_1": False, "tsne_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#fecc07'])
 fig.update_layout(plot_bgcolor='#255799', title={
         'text': "t-SNE",

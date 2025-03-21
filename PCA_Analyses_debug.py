@@ -52,21 +52,20 @@ fig = px.scatter(pca_df, x='PC1', y='PC2')
 st.plotly_chart(fig)
 
 # UMAP 2D
-# UMAP 2D
 umap_2d_result = UMAP().fit_transform(numeric_data)
 umap_2d_df = pd.DataFrame(umap_2d_result, columns=["umap_1", "umap_2"])
 umap_2d_df['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
 
-top_mesh_terms = []
-for faculty_full_name in umap_2d_df['Faculty_Full_Name']: #Use the full name column here.
-    faculty_terms = combined_faculty_df[combined_faculty_df['Faculty_Full_Name'] == faculty_full_name]['Combined_Mesh_Terms'].iloc[0] #use the full name here.
-    counter = Counter(str(faculty_terms).split("; "))
-    top_items = [item[0] for item in counter.most_common(3)]
-    top_mesh_terms.append("; ".join(top_items))
+# top_mesh_terms = []
+# for faculty_full_name in umap_2d_df['Faculty_Full_Name']: #Use the full name column here.
+#     faculty_terms = combined_faculty_df[combined_faculty_df['Faculty_Full_Name'] == faculty_full_name]['Combined_Mesh_Terms'].iloc[0] #use the full name here.
+#     counter = Counter(str(faculty_terms).split("; "))
+#     top_items = [item[0] for item in counter.most_common(3)]
+#     top_mesh_terms.append("; ".join(top_items))
 
-umap_2d_df['Top_Mesh_Terms'] = top_mesh_terms
+# umap_2d_df['Top_Mesh_Terms'] = top_mesh_terms
 
-fig = px.scatter(umap_2d_df, x="umap_1", y="umap_2", title="UMAP", hover_name="Faculty_Full_Name", hover_data={"umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#fecc07'])
+fig = px.scatter(umap_2d_df, x="umap_1", y="umap_2", title="UMAP", hover_name="Faculty_Full_Name", hover_data={"umap_1": False, "umap_2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
 
 fig.update_layout(plot_bgcolor='#255799', title={
         'text': "UMAP",

@@ -12,6 +12,8 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.metrics import silhouette_score
 import matplotlib.pyplot as plt
 import seaborn as sns
+from collections import Counter
+from Biopython_Entrez import *
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
@@ -53,7 +55,16 @@ st.plotly_chart(fig)
 umap_2d_result = UMAP().fit_transform(numeric_data)
 umap_2d_df = pd.DataFrame(umap_2d_result, columns=["umap_1", "umap_2"])
 umap_2d_df['Faculty'] = raw_data['Faculty']
-fig = px.scatter(umap_2d_df, x="umap_1", y="umap_2", title="UMAP", hover_name="Faculty", hover_data={"umap_1": False, "umap_2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
+top_mesh_terms = []
+for faculty in umap_2d_df['Faculty']:
+    faculty_terms = combined_faculty_df[combined_faculty_df['Faculty'] == faculty]['Combined_Mesh_Terms'].iloc[0]
+    counter = Counter(str(faculty_terms).split("; "))
+    top_items = [item[0] for item in counter.most_common(3)]
+    top_mesh_terms.append("; ".join(top_items))
+
+umap_2d_df['Top_Mesh_Terms'] = top_mesh_terms
+fig = px.scatter(umap_2d_df, x="umap_1", y="umap_2", title="UMAP", hover_name="Faculty", hover_data={"umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#fecc07'])
+
 fig.update_layout(plot_bgcolor='#255799', title={
         'text': "UMAP",
         'font': {'size': 30},

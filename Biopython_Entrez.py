@@ -30,7 +30,7 @@ for index, row in faculty_df.iterrows():
 # Fetch MeSH terms for each PMID
 faculty_df['pub_mesh_terms'] = None
 for index, row in faculty_df.iterrows():
-    pmid_list = row['pmids']
+    pmid_list = row['pmids'] 
     mesh_term_texts = []
     for pmid in pmid_list:
         handle_mesh = Entrez.efetch(db="pubmed", id=pmid, rettype="xml")
@@ -48,8 +48,14 @@ for index, row in faculty_df.iterrows():
 
     faculty_df.at[index, 'pub_mesh_terms'] = '; '.join(mesh_term_texts)
 
+output_file = 'faculty_pulled_mesh_terms.csv'
+faculty_df.to_csv(output_file, index=False)
+
+output_file = 'faculty_pulled_mesh_terms.csv'
+faculty_df = pd.read_csv(output_file)
 # Process proposal MeSH terms
 faculty_proposal_mesh_terms_df['Proposal_Mesh_Terms'] = faculty_proposal_mesh_terms_df['Proposal_Mesh_Terms'].astype(str)
+
 proposal_mesh_terms_df = faculty_proposal_mesh_terms_df.groupby('Faculty')['Proposal_Mesh_Terms'].agg(lambda x: '; '.join(x)).reset_index()
 
 def repeat_mesh_terms(mesh_terms, repetitions):

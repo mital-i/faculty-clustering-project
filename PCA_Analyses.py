@@ -23,9 +23,9 @@ rawData = pd.read_excel('mesh_terms_matrix_5yrs_and_keywords.xlsx', index_col = 
 rawData.reset_index(inplace=True) 
 numeric_data = rawData.drop(columns=['Faculty_Full_Name'])
 faculty_column = pd.read_excel('mesh_terms_matrix_5yrs_and_keywords.xlsx', usecols=['Faculty_Full_Name'])
-# Remove spaces from column names
-rawData.columns = rawData.columns.str.replace(' ', '_').str.replace('-', '_').str.replace(',', '_')
+rawData.columns = rawData.columns.str.replace(' ', '_').str.replace('-', '_').str.replace(',', '_') # Remove spaces from column names
 
+# Set up and run PCA
 pca = PCA()
 pca_data = pca.fit_transform(numeric_data)
 
@@ -43,6 +43,7 @@ pca_df = pd.DataFrame(pca_data, columns=[f'PC{i+1}' for i in range(pca_data.shap
 fig = px.scatter(pca_df, x='PC1', y='PC2')
 fig.show()
 
+# Set up and run UMAP
 umap_data = UMAP().fit_transform(numeric_data)
 
 # 2D UMAP plot
@@ -56,12 +57,7 @@ fig.update_xaxes(showticklabels=False)
 fig.update_yaxes(showticklabels=False)
 fig.show()
 
-# 3D UMAP plot
-umap3_data = UMAP(n_components=2).fit_transform(numeric_data)
-layout = pd.DataFrame(umap3_data, columns=["X1", "X2"])
-fig = go.Figure(data=[go.Scatter3d(x=layout["X1"], y=layout["X2"],mode='markers')])
-fig.show()
-
+# Run t-SNE and show results
 tsne = TSNE(n_components=2, perplexity=25)
 tsne_result = tsne.fit_transform(numeric_data)
 tsne_df = pd.DataFrame(tsne_result, columns=["V1", "V2"])
@@ -74,10 +70,10 @@ fig.update_xaxes(showticklabels=False)
 fig.update_yaxes(showticklabels=False)
 fig.show()
 
+# Run UMAP with PCA components
 pca_result = PCA().fit_transform(numeric_data)
 num_components = 2
 pca_scores = pca_result[:, :num_components]
-
 umap_result = UMAP().fit_transform(pca_scores)
 umapDf_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
 umapDf_pca['Faculty_Full_Name'] = rawData['Faculty_Full_Name']
@@ -86,9 +82,10 @@ fig.update_layout(plot_bgcolor='#255799')
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
 fig.update_xaxes(showticklabels=False)
-fig.update_yaxes(showticklabels=False))
+fig.update_yaxes(showticklabels=False)
 fig.show()
 
+# Run UMAP with different number of PCA components
 for num_components in range(1, 20):
     pca_scores = pca_result[:, :num_components]
     umap_result = UMAP().fit_transform(pca_scores)
@@ -102,32 +99,35 @@ for num_components in range(1, 20):
     fig.update_yaxes(showticklabels=False)
     fig.show()
 
+# Cluster UMAP with DBSCAN
 knn = NearestNeighbors(n_neighbors=8)
 knn.fit(pca_scores)
 distances, indices = knn.kneighbors(pca_scores)
 dbs = DBSCAN(eps=0.05, min_samples=2).fit(pca_scores)
 umapDf_pca['cluster'] = dbs.labels_
 
+# Plot UMAP with clusters
 fig = px.scatter(umapDf_pca, x="V1", y="V2", color='cluster', title="UMAP with Clusters", hover_name="Faculty_Full_Name", hover_data={"V1": False, "V2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
 fig.update_layout(plot_bgcolor='#255799')
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
 fig.update_xaxes(showticklabels=False)
-fig.update_yaxes(showticklabels=False))
+fig.update_yaxes(showticklabels=False)
 fig.show()
 
-umapDf_pca['Faculty_Full_Name'] = rawData['Faculty_Full_Name']
+umapDf_pca['Faculty_Full_Name'] = rawData['Faculty_Full_Name'] # Add faculty names back to dataframe
 
 # K-means clustering
 kmeans = KMeans(n_clusters=12, random_state=123).fit(pca_scores)
 umapDf_pca['cluster'] = kmeans.labels_
 
+# Plot UMAP with K-means clusters
 fig = px.scatter(umapDf_pca, x="V1", y="V2", color='cluster', title="UMAP with K-means Clusters", hover_name="Faculty_Full_Name", hover_data={"V1": False, "V2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
 fig.update_layout(plot_bgcolor='#255799')
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
 fig.update_xaxes(showticklabels=False)
-fig.update_yaxes(showticklabels=False))
+fig.update_yaxes(showticklabels=False)
 fig.show()
 
 # Identify optimal number of clusters using silhouette score
@@ -137,11 +137,10 @@ def avg_silhouette(data, k):
     sil_score = silhouette_score(data, labels)
     return sil_score
 
+# Calculate silhouette scores for different K
 k_values = range(2, 21)
-
 umapDf_pca = umapDf_pca.drop(columns=['Faculty_Full_Name'])
 sil_values = [avg_silhouette(umapDf_pca, k) for k in k_values]
-
 plt.figure()
 plt.plot(k_values, sil_values, 'b*-')
 plt.xlabel('Number of clusters K')
@@ -149,9 +148,10 @@ plt.ylabel('Average Silhouette Width')
 plt.title('Silhouette Score for Different K')
 plt.show()
 
-filtered_data_df = pd.DataFrame(numeric_data)
-filtered_data_df['cluster'] = kmeans.labels_
+filtered_data_df = pd.DataFrame(numeric_data) # Create a new dataframe with numeric data
+filtered_data_df['cluster'] = kmeans.labels_ # Add cluster labels to the dataframe
 
+# Perform ANOVA and identify significant features
 def get_anova_pvalues(feature, data):
     model = ols(f"{feature} ~ C(cluster)", data=data).fit()
     anova_table = sm.stats.anova_lm(model, typ=2)
@@ -175,12 +175,12 @@ fig.update_layout(plot_bgcolor='#255799')
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
 fig.update_xaxes(showticklabels=False)
-fig.update_yaxes(showticklabels=False))
+fig.update_yaxes(showticklabels=False)
 fig.show()
 umapDf_pca = umapDf_pca.drop(columns=['Faculty_Full_Name'])
 
 # Save outputs
-path = '/Users/justinsarkis/Downloads/faculty-mapped-mesh-terms'
+path = '/Users/justinsarkis/Downloads/'
 sig_df_path = os.path.join(path, "Significant_terms_per_cluster.csv")
 cluster_df_path = os.path.join(path, "Professors_in_clusters.csv")
 fig_path = os.path.join(path, "UMAP_professors_clusters.pdf")

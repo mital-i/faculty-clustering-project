@@ -163,7 +163,7 @@ calculate_top_mesh_terms(faculty_mesh_terms_dict)
 
 def get_unique_terms(combined_faculty_df):
     unique_terms = {}
-    for index, row in faculty_data.iterrows():
+    for index, row in combined_faculty_df.iterrows():
         faculty_name, terms = row['Faculty'], row['Combined_Mesh_Terms']
         terms_list = [term.strip() for term in terms.split(';')]
         unique_terms[faculty_name] = "; ".join(sorted(set(terms_list)))  # Sort for consistency

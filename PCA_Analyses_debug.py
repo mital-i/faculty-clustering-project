@@ -31,7 +31,8 @@ numeric_data = raw_data.drop(columns=['Faculty_Full_Name'])
 faculty_column = pd.read_excel(data_path, usecols=['Faculty_Full_Name'])
 
 # Clean column names
-raw_data.columns = raw_data.columns.str.replace(' ', '_').str.replace('-', '_').str.replace(',', '_')
+raw_data.columns = raw_data.columns.str.replace(
+    ' ', '_').str.replace('-', '_').str.replace(',', '_')
 
 # PCA
 pca = PCA()
@@ -47,7 +48,8 @@ plt.title('Explained Variance')
 st.pyplot(plt.gcf())
 
 # PCA scatter plot
-pca_df = pd.DataFrame(pca_result, columns=[f'PC{i+1}' for i in range(pca_result.shape[1])])
+pca_df = pd.DataFrame(pca_result, columns=[
+                      f'PC{i+1}' for i in range(pca_result.shape[1])])
 fig = px.scatter(pca_df, x='PC1', y='PC2')
 st.plotly_chart(fig)
 
@@ -57,19 +59,22 @@ umap_2d_df = pd.DataFrame(umap_2d_result, columns=["umap_1", "umap_2"])
 umap_2d_df['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
 
 top_mesh_terms = []
-for faculty_full_name in umap_2d_df['Faculty_Full_Name']: #Use the full name column here.
-    faculty_terms = combined_faculty_df[combined_faculty_df['Faculty_Full_Name'] == faculty_full_name]['Combined_Mesh_Terms'].iloc[0] #use the full name here.
+# Use the full name column here.
+for faculty_full_name in umap_2d_df['Faculty_Full_Name']:
+    faculty_terms = combined_faculty_df[combined_faculty_df['Faculty_Full_Name'] ==
+                                        faculty_full_name]['Combined_Mesh_Terms'].iloc[0]  # use the full name here.
     counter = Counter(str(faculty_terms).split("; "))
     top_items = [item[0] for item in counter.most_common(3)]
     top_mesh_terms.append("; ".join(top_items))
 
 umap_2d_df['Top_Mesh_Terms'] = top_mesh_terms
 
-fig = px.scatter(umap_2d_df, x="umap_1", y="umap_2", title="UMAP", hover_name="Faculty_Full_Name", hover_data={"umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#fecc07'])
+fig = px.scatter(umap_2d_df, x="umap_1", y="umap_2", title="UMAP", hover_name="Faculty_Full_Name", hover_data={
+                 "umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#fecc07'])
 
 fig.update_layout(plot_bgcolor='#255799', title={
-        'text': "UMAP",
-        'font': {'size': 30},
+    'text': "UMAP",
+    'font': {'size': 30},
 })
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
@@ -89,10 +94,11 @@ tsne_result = tsne.fit_transform(numeric_data)
 tsne_df = pd.DataFrame(tsne_result, columns=["tsne_1", "tsne_2"])
 tsne_df['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
 tsne_df['Top_Mesh_Terms'] = top_mesh_terms
-fig = px.scatter(tsne_df, x="tsne_1", y="tsne_2", title="t-SNE", hover_name="Faculty_Full_Name", hover_data={"tsne_1": False, "tsne_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#fecc07'])
+fig = px.scatter(tsne_df, x="tsne_1", y="tsne_2", title="t-SNE", hover_name="Faculty_Full_Name", hover_data={
+                 "tsne_1": False, "tsne_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#fecc07'])
 fig.update_layout(plot_bgcolor='#255799', title={
-        'text': "t-SNE",
-        'font': {'size': 30},
+    'text': "t-SNE",
+    'font': {'size': 30},
 })
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
@@ -101,15 +107,26 @@ fig.update_yaxes(showticklabels=False)
 st.plotly_chart(fig)
 
 # UMAP on PCA components
+
 num_pca_components = 2
 pca_scores = pca_result[:, :num_pca_components]
 umap_pca_result = UMAP().fit_transform(pca_scores)
 umap_pca_df = pd.DataFrame(umap_pca_result, columns=["umap_1", "umap_2"])
 umap_pca_df['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
-fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", title="UMAP on PCA Components", hover_name="Faculty_Full_Name", hover_data={"umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#fecc07'])
+umap_pca_df['Top_Mesh_Terms'] = top_mesh_terms
+fig = px.scatter(umap_pca_df, 
+                 x="umap_1", 
+                 y="umap_2", 
+                 title="UMAP on PCA Components", 
+                 hover_name="Faculty_Full_Name", 
+                 hover_data={"umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, 
+                 width=800, 
+                 height=800,
+                 color="Faculty_Full_Name",  # Add this line
+                 color_discrete_sequence=['#fecc07'])
 fig.update_layout(plot_bgcolor='#255799', title={
-        'text': "UMAP on PCA Components",
-        'font': {'size': 30},
+    'text': "UMAP on PCA Components",
+    'font': {'size': 30},
 })
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
@@ -123,7 +140,8 @@ for num_components in range(1, 31):
     umap_result = UMAP().fit_transform(pca_scores)
     umap_df_pca_var = pd.DataFrame(umap_result, columns=["umap_1", "umap_2"])
     umap_df_pca_var['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
-    fig = px.scatter(umap_df_pca_var, x="umap_1", y="umap_2", title=f"UMAP with {num_components} PCA Components", hover_name="Faculty_Full_Name", hover_data={"umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#fecc07'])
+    fig = px.scatter(umap_df_pca_var, x="umap_1", y="umap_2", title=f"UMAP with {num_components} PCA Components", hover_name="Faculty_Full_Name", hover_data={
+                     "umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#fecc07'])
     fig.update_layout(plot_bgcolor='#255799', title={
         'text': f"UMAP with {num_components} PCA Components",
         'font': {'size': 30},
@@ -140,14 +158,16 @@ knn.fit(pca_scores)
 distances, indices = knn.kneighbors(pca_scores)
 dbscan = DBSCAN(eps=0.05, min_samples=2).fit(pca_scores)
 umap_pca_df['cluster'] = dbscan.labels_
-fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with Clusters", hover_name="Faculty_Full_Name", hover_data={"umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#fecc07'])
+fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with Clusters", hover_name="Faculty_Full_Name", hover_data={
+                 "umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#fecc07'])
 fig.update_layout(
-    plot_bgcolor='black',  # This sets the color of the plotting area (inside the axes)
-    paper_bgcolor='black', 
+    # This sets the color of the plotting area (inside the axes)
+    plot_bgcolor='black',
+    paper_bgcolor='black',
     title={
         'text': "UMAP with Clusters",
         'font': {'size': 30},
-})
+    })
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
 fig.update_xaxes(showticklabels=False)
@@ -157,14 +177,16 @@ st.plotly_chart(fig)
 # K-means clustering
 kmeans = KMeans(n_clusters=12, random_state=123).fit(pca_scores)
 umap_pca_df['cluster'] = kmeans.labels_
-fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with K-means Clusters", hover_name="Faculty_Full_Name", hover_data={"umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#fecc07'])
+fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with K-means Clusters", hover_name="Faculty_Full_Name",
+                 hover_data={"umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#fecc07'])
 fig.update_layout(
-    plot_bgcolor='black',  # This sets the color of the plotting area (inside the axes)
+    # This sets the color of the plotting area (inside the axes)
+    plot_bgcolor='black',
     paper_bgcolor='black',     # This sets the color of the entire figure background
     title={
         'text': "UMAP with K-means Clusters",
         'font': {'size': 30},
-})
+    })
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
 fig.update_xaxes(showticklabels=False)
@@ -172,14 +194,18 @@ fig.update_yaxes(showticklabels=False)
 st.plotly_chart(fig)
 
 # Silhouette score for optimal K
+
+
 def calculate_silhouette_score(data, k):
     kmeans = KMeans(n_clusters=k, random_state=123).fit(data)
     labels = kmeans.labels_
     return silhouette_score(data, labels)
 
+
 k_values = range(2, 21)
 umap_pca_no_faculty = umap_pca_df.drop(columns=['Faculty_Full_Name'])
-silhouette_values = [calculate_silhouette_score(umap_pca_no_faculty, k) for k in k_values]
+silhouette_values = [calculate_silhouette_score(
+    umap_pca_no_faculty, k) for k in k_values]
 
 plt.figure()
 plt.plot(k_values, silhouette_values, 'b*-')
@@ -191,29 +217,36 @@ st.pyplot(plt)
 # ANOVA and feature significance
 filtered_data = pd.DataFrame(numeric_data)
 filtered_data['cluster'] = kmeans.labels_
-filtered_data.columns = filtered_data.columns.str.replace(' ', '_').str.replace(',', '_').str.replace('-', '_')
+filtered_data.columns = filtered_data.columns.str.replace(
+    ' ', '_').str.replace(',', '_').str.replace('-', '_')
 feature_names = filtered_data.columns[:-1]
+
 
 def calculate_anova_pvalue(feature, data):
     model = ols(f"{feature} ~ C(cluster)", data=data).fit()
     anova_table = sm.stats.anova_lm(model, typ=2)
     return anova_table["PR(>F)"][0]
 
-p_values = {feature: calculate_anova_pvalue(feature, filtered_data) for feature in feature_names}
+
+p_values = {feature: calculate_anova_pvalue(
+    feature, filtered_data) for feature in feature_names}
 _, p_adjusted, _, _ = multipletests(list(p_values.values()), method='fdr_bh')
-significant_features = [feature for feature, pval in zip(feature_names, p_adjusted) if pval < 0.05]
+significant_features = [feature for feature, pval in zip(
+    feature_names, p_adjusted) if pval < 0.05]
 print("Significant features:", significant_features)
 
 # Final UMAP with K-means clusters
 umap_pca_df['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
-fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with K-means Clusters", hover_name="Faculty_Full_Name", hover_data={"umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#000000'])
+fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with K-means Clusters", hover_name="Faculty_Full_Name",
+                 hover_data={"umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#000000'])
 fig.update_layout(
-    plot_bgcolor='black',  # This sets the color of the plotting area (inside the axes)
+    # This sets the color of the plotting area (inside the axes)
+    plot_bgcolor='black',
     paper_bgcolor='black',     # This sets the color of the entire figure background
     title={
-    'text': "UMAP with K-means Clusters",
-    'font': {'size': 30},
-})
+        'text': "UMAP with K-means Clusters",
+        'font': {'size': 30},
+    })
 fig.update_xaxes(title_text="")
 fig.update_yaxes(title_text="")
 fig.update_xaxes(showticklabels=False)

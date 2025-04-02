@@ -197,44 +197,48 @@ st.plotly_chart(fig)
 # Silhouette score for optimal K
 
 
-def calculate_silhouette_score(data, k):
-    kmeans = KMeans(n_clusters=k, random_state=123).fit(data)
-    labels = kmeans.labels_
-    return silhouette_score(data, labels)
+# def calculate_silhouette_score(data, k):
+#     # Make sure only numeric columns are used
+#     numeric_data = data.select_dtypes(include=['float64', 'float32', 'int64', 'int32'])
+    
+#     print(f"Using columns for clustering: {numeric_data.columns.tolist()}")
+    
+#     kmeans = KMeans(n_clusters=k, random_state=123).fit(numeric_data)
+#     labels = kmeans.labels_
+#     return silhouette_score(numeric_data, labels)
 
 
-k_values = range(2, 21)
-umap_pca_no_faculty = umap_pca_df.drop(columns=['Faculty_Full_Name', 'Top_Mesh_Terms'])
-silhouette_values = [calculate_silhouette_score(
-    umap_pca_no_faculty, k) for k in k_values]
+# k_values = range(2, 21)
+# umap_pca_no_faculty = umap_pca_df.drop(columns=['Faculty_Full_Name', 'Top_Mesh_Terms'])
+# silhouette_values = [calculate_silhouette_score(umap_pca_no_faculty, k) for k in k_values]
 
-plt.figure()
-plt.plot(k_values, silhouette_values, 'b*-')
-plt.xlabel('Number of clusters K')
-plt.ylabel('Average Silhouette Width')
-plt.title('Silhouette Score for Different K')
-st.pyplot(plt)
+# plt.figure()
+# plt.plot(k_values, silhouette_values, 'b*-')
+# plt.xlabel('Number of clusters K')
+# plt.ylabel('Average Silhouette Width')
+# plt.title('Silhouette Score for Different K')
+# st.pyplot(plt)
 
-# ANOVA and feature significance
-filtered_data = pd.DataFrame(numeric_data)
-filtered_data['cluster'] = kmeans.labels_
-filtered_data.columns = filtered_data.columns.str.replace(
-    ' ', '_').str.replace(',', '_').str.replace('-', '_')
-feature_names = filtered_data.columns[:-1]
-
-
-def calculate_anova_pvalue(feature, data):
-    model = ols(f"{feature} ~ C(cluster)", data=data).fit()
-    anova_table = sm.stats.anova_lm(model, typ=2)
-    return anova_table["PR(>F)"][0]
+# # ANOVA and feature significance
+# filtered_data = pd.DataFrame(numeric_data)
+# filtered_data['cluster'] = kmeans.labels_
+# filtered_data.columns = filtered_data.columns.str.replace(
+#     ' ', '_').str.replace(',', '_').str.replace('-', '_')
+# feature_names = filtered_data.columns[:-1]
 
 
-p_values = {feature: calculate_anova_pvalue(
-    feature, filtered_data) for feature in feature_names}
-_, p_adjusted, _, _ = multipletests(list(p_values.values()), method='fdr_bh')
-significant_features = [feature for feature, pval in zip(
-    feature_names, p_adjusted) if pval < 0.05]
-print("Significant features:", significant_features)
+# def calculate_anova_pvalue(feature, data):
+#     model = ols(f"{feature} ~ C(cluster)", data=data).fit()
+#     anova_table = sm.stats.anova_lm(model, typ=2)
+#     return anova_table["PR(>F)"][0]
+
+
+# p_values = {feature: calculate_anova_pvalue(
+#     feature, filtered_data) for feature in feature_names}
+# _, p_adjusted, _, _ = multipletests(list(p_values.values()), method='fdr_bh')
+# significant_features = [feature for feature, pval in zip(
+#     feature_names, p_adjusted) if pval < 0.05]
+# print("Significant features:", significant_features)
 
 # Final UMAP with K-means clusters
 umap_pca_df['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']

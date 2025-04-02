@@ -37,6 +37,11 @@ raw_data.columns = raw_data.columns.str.replace(
 # PCA
 pca = PCA()
 pca_result = pca.fit_transform(numeric_data)
+st.subheader("PCA Explained Variance") # Add subheader for clarity
+# Write description for Explained Variance Plot using st.write()
+st.write("""
+**Plot Description:** This plot shows the cumulative percentage of variance captured by the principal components (PCs). The x-axis represents the number of PCs included, and the y-axis shows the total variance explained. It helps determine how many PCs are needed to retain a significant amount of information.
+""")
 
 # Visualize explained variance
 explained_variance_ratio = pca.explained_variance_ratio_
@@ -48,12 +53,22 @@ plt.title('Explained Variance')
 st.pyplot(plt.gcf())
 
 # PCA scatter plot
+st.subheader("PCA Scatter Plot (PC1 vs PC2)") # Add subheader
+# Write description for PCA Scatter Plot using st.write()
+st.write("""
+**Plot Description:** This scatter plot displays the data projected onto the first two principal components (PC1 and PC2). Each point represents a faculty member. Reveals primary axes of variation based on PCA reduction.
+""")
 pca_df = pd.DataFrame(pca_result, columns=[
                       f'PC{i+1}' for i in range(pca_result.shape[1])])
 fig = px.scatter(pca_df, x='PC1', y='PC2')
 st.plotly_chart(fig)
 
 # UMAP 2D
+st.subheader("UMAP 2D Projection (on Raw Data)") # Add subheader
+# Write description for UMAP 2D Plot using st.write()
+st.write("""
+**Plot Description:** Shows a 2D UMAP representation of the original high-dimensional data. Aims to preserve local and global structure. Hover shows faculty name and top 3 MeSH terms (if available).
+""")
 umap_2d_result = UMAP().fit_transform(numeric_data)
 umap_2d_df = pd.DataFrame(umap_2d_result, columns=["umap_1", "umap_2"])
 umap_2d_df['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
@@ -89,6 +104,11 @@ st.plotly_chart(fig)
 # st.plotly_chart(fig)
 
 # t-SNE
+st.subheader("t-SNE 2D Projection (on Raw Data)") # Add subheader
+# Write description for t-SNE Plot using st.write()
+st.write("""
+**Plot Description:** Presents a 2D t-SNE embedding of the original data. Focuses on local similarities. Hover shows faculty name and top 3 MeSH terms (if available).
+""")
 tsne = TSNE(n_components=2, perplexity=25)
 tsne_result = tsne.fit_transform(numeric_data)
 tsne_df = pd.DataFrame(tsne_result, columns=["tsne_1", "tsne_2"])
@@ -107,13 +127,16 @@ fig.update_yaxes(showticklabels=False)
 st.plotly_chart(fig)
 
 # UMAP on PCA components
-
+st.subheader("UMAP on PCA Components")
 num_pca_components = 2
 pca_scores = pca_result[:, :num_pca_components]
 umap_pca_result = UMAP().fit_transform(pca_scores)
 umap_pca_df = pd.DataFrame(umap_pca_result, columns=["umap_1", "umap_2"])
 umap_pca_df['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
 umap_pca_df["Top_Mesh_Terms"] = top_mesh_terms
+st.write(f"""
+**Plot Description:** Displays the UMAP projection applied *after* PCA reduction (using first {num_pca_components} components). Visualizes structure found by UMAP within the principal component space. Hover shows faculty/terms.
+""")
 fig = px.scatter(umap_pca_df, 
                  x="umap_1", 
                  y="umap_2", 
@@ -134,9 +157,13 @@ fig.update_yaxes(showticklabels=False)
 st.plotly_chart(fig)
 
 # UMAP on varying PCA components (1 component)
+st.subheader("UMAP on Varying PCA Dimensions") 
 for num_components in range(1, 31):
     pca_scores = pca_result[:, :num_components]
     umap_result = UMAP().fit_transform(pca_scores)
+    st.write(f"""
+    **Plot Description (UMAP with {num_components} PCA Components):** Shows UMAP projection based on the first {num_components} principal components. Observe structure changes as more components are included. Hover shows faculty/terms.
+    """)
     umap_df_pca_var = pd.DataFrame(umap_result, columns=["umap_1", "umap_2"])
     umap_df_pca_var['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
     umap_df_pca_var['Top_Mesh_Terms'] = top_mesh_terms
@@ -153,12 +180,15 @@ for num_components in range(1, 31):
     st.plotly_chart(fig)
 
 # DBSCAN clustering
+st.subheader("UMAP with DBSCAN Clustering")
 knn = NearestNeighbors(n_neighbors=8)
 knn.fit(pca_scores)
 distances, indices = knn.kneighbors(pca_scores)
 dbscan = DBSCAN(eps=0.05, min_samples=2).fit(pca_scores)
 umap_pca_df['cluster'] = dbscan.labels_
-
+st.write(f"""
+**Plot Description:** Shows UMAP projection (based on first {num_pca_components} PCA components). Points colored by DBSCAN clusters (eps={dbscan.eps}, min_samples={dbscan.min_samples}) found using the {num_pca_components} PCA components. Noise points often label -1. Hover shows faculty/terms/cluster. *(Note: Fixed color means all clusters appear yellow).*
+""")
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with Clusters", hover_name="Faculty_Full_Name", hover_data={
                  "umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#fecc07'])
 fig.update_layout(
@@ -176,8 +206,12 @@ fig.update_yaxes(showticklabels=False)
 st.plotly_chart(fig)
 
 # K-means clustering
+st.subheader("UMAP with K-means Clustering (K=12)")
 kmeans = KMeans(n_clusters=12, random_state=123).fit(pca_scores)
 umap_pca_df['cluster'] = kmeans.labels_
+st.write(f"""
+**Plot Description:** Shows UMAP projection (based on first {num_pca_components} PCA components). Points colored by K-means clusters (K=12) found using the {num_pca_components} PCA components. Hover shows faculty/terms/cluster. *(Note: Fixed color means all clusters appear yellow).*
+""")
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with K-means Clusters", hover_name="Faculty_Full_Name",
                  hover_data={"umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#fecc07'])
 fig.update_layout(
@@ -241,6 +275,11 @@ st.plotly_chart(fig)
 # print("Significant features:", significant_features)
 
 # Final UMAP with K-means clusters
+st.subheader("Final UMAP Visualization (K=12, Black)") # Add subheader
+# Write description for Final UMAP Plot using st.write()
+st.write(f"""
+**Plot Description:** Another view of UMAP (based on {num_pca_components} PCA components) colored by the K=12 K-means clusters. Hover shows faculty/terms/cluster. *(Note: Fixed BLACK color means all clusters appear black).*
+""")
 umap_pca_df['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with K-means Clusters", hover_name="Faculty_Full_Name",
                  hover_data={"umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#000000'])

@@ -38,6 +38,12 @@ raw_data.columns = raw_data.columns.str.replace(
 pca = PCA()
 pca_result = pca.fit_transform(numeric_data)
 
+st.subheader("PCA Explained Variance") # Add subheader for clarity
+# Write description for Explained Variance Plot using st.write()
+st.write("""
+**Plot Description:** This plot shows the cumulative percentage of variance captured by the principal components (PCs). The x-axis represents the number of PCs included, and the y-axis shows the total variance explained. It helps determine how many PCs are needed to retain a significant amount of information.
+""")
+
 # Visualize explained variance
 explained_variance_ratio = pca.explained_variance_ratio_
 plt.figure()
@@ -48,12 +54,22 @@ plt.title('Explained Variance')
 st.pyplot(plt.gcf())
 
 # PCA scatter plot
+st.subheader("PCA Scatter Plot (PC1 vs PC2)") # Add subheader
+# Write description for PCA Scatter Plot using st.write()
+st.write("""
+**Plot Description:** This scatter plot displays the data projected onto the first two principal components (PC1 and PC2). Each point represents a faculty member. Reveals primary axes of variation based on PCA reduction.
+""")
 pca_df = pd.DataFrame(pca_result, columns=[
                       f'PC{i+1}' for i in range(pca_result.shape[1])])
 fig = px.scatter(pca_df, x='PC1', y='PC2')
 st.plotly_chart(fig)
 
 # UMAP 2D
+st.subheader("UMAP 2D Projection (on Raw Data)") # Add subheader
+# Write description for UMAP 2D Plot using st.write()
+st.write("""
+**Plot Description:** Shows a 2D UMAP representation of the original high-dimensional data. Aims to preserve local and global structure. Hover shows faculty name and top 3 MeSH terms (if available).
+""")
 umap_2d_result = UMAP().fit_transform(numeric_data)
 umap_2d_df = pd.DataFrame(umap_2d_result, columns=["umap_1", "umap_2"])
 umap_2d_df['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']

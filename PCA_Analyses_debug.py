@@ -204,7 +204,7 @@ def calculate_silhouette_score(data, k):
 
 
 k_values = range(2, 21)
-umap_pca_no_faculty = umap_pca_df.drop(columns=['Faculty_Full_Name'])
+umap_pca_no_faculty = umap_pca_df.drop(columns=['Faculty_Full_Name', 'Top_Mesh_Terms'])
 silhouette_values = [calculate_silhouette_score(
     umap_pca_no_faculty, k) for k in k_values]
 

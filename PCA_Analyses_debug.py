@@ -113,7 +113,7 @@ pca_scores = pca_result[:, :num_pca_components]
 umap_pca_result = UMAP().fit_transform(pca_scores)
 umap_pca_df = pd.DataFrame(umap_pca_result, columns=["umap_1", "umap_2"])
 umap_pca_df['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
-umap_pca_df['Top_Mesh_Terms'] = top_mesh_terms
+umap_pca_df["Top_Mesh_Terms"] = top_mesh_terms
 fig = px.scatter(umap_pca_df, 
                  x="umap_1", 
                  y="umap_2", 
@@ -122,8 +122,7 @@ fig = px.scatter(umap_pca_df,
                  hover_data={"umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, 
                  width=800, 
                  height=800,
-                 color="Faculty_Full_Name",  # Add this line
-                 color_discrete_sequence=['#fecc07'])
+                 color="Faculty_Full_Name")
 fig.update_layout(plot_bgcolor='#255799', title={
     'text': "UMAP on PCA Components",
     'font': {'size': 30},
@@ -140,6 +139,7 @@ for num_components in range(1, 31):
     umap_result = UMAP().fit_transform(pca_scores)
     umap_df_pca_var = pd.DataFrame(umap_result, columns=["umap_1", "umap_2"])
     umap_df_pca_var['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
+    umap_df_pca_var['Top_Mesh_Terms'] = top_mesh_terms
     fig = px.scatter(umap_df_pca_var, x="umap_1", y="umap_2", title=f"UMAP with {num_components} PCA Components", hover_name="Faculty_Full_Name", hover_data={
                      "umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#fecc07'])
     fig.update_layout(plot_bgcolor='#255799', title={
@@ -158,6 +158,7 @@ knn.fit(pca_scores)
 distances, indices = knn.kneighbors(pca_scores)
 dbscan = DBSCAN(eps=0.05, min_samples=2).fit(pca_scores)
 umap_pca_df['cluster'] = dbscan.labels_
+
 fig = px.scatter(umap_pca_df, x="umap_1", y="umap_2", color='cluster', title="UMAP with Clusters", hover_name="Faculty_Full_Name", hover_data={
                  "umap_1": False, "umap_2": False, "Top_Mesh_Terms": True}, width=800, height=800, color_discrete_sequence=['#fecc07'])
 fig.update_layout(

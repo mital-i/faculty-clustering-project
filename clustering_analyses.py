@@ -20,13 +20,28 @@ import kaleido
 import networkx as nx
 import leidenalg as la
 import igraph as ig
+from sklearn.preprocessing import StandardScaler 
 
-# Import raw data matrix
-rawData = pd.read_excel('mesh_terms_matrix_5yrs_and_keywords.xlsx', index_col = 'Faculty_Full_Name')
-rawData.reset_index(inplace=True) 
-numeric_data = rawData.drop(columns=['Faculty_Full_Name'])
-faculty_column = pd.read_excel('mesh_terms_matrix_5yrs_and_keywords.xlsx', usecols=['Faculty_Full_Name'])
-rawData.columns = rawData.columns.str.replace(' ', '_').str.replace('-', '_').str.replace(',', '_') # Remove spaces from column names
+def load_and_preprocess_data(file_path, index_col='Faculty_Full_Name'):
+    """Loads and preprocesses the raw data."""
+    rawData = pd.read_excel(file_path, index_col=index_col)
+    rawData.reset_index(inplace=True)
+    faculty_column = pd.read_excel(file_path, usecols=['Faculty_Full_Name'])
+    numeric_data = rawData.drop(columns=['Faculty_Full_Name'])
+    rawData.columns = rawData.columns.str.replace(' ', '_').str.replace('-', '_').str.replace(',', '_')
+    numeric_data.columns = numeric_data.columns.str.replace(' ', '_').str.replace('-', '_').str.replace(',', '_')
+    return rawData, numeric_data, faculty_column
+
+def fig_show(fig):
+    fig.update_layout(plot_bgcolor='#255799')
+    fig.update_xaxes(title_text="")
+    fig.update_yaxes(title_text="")
+    fig.update_xaxes(showticklabels=False)
+    fig.update_yaxes(showticklabels=False)
+    fig.show()
+
+file_path = 'mesh_terms_matrix_5yrs_and_keywords.xlsx'
+raw_data, numeric_data, faculty_column = load_and_preprocess_data(file_path)
 
 # Set up and run PCA on the raw data (columns = MeSH terms, rows = faculty members, values = frquency of terms)
 pca = PCA()
@@ -54,17 +69,29 @@ umap_data = UMAP().fit_transform(numeric_data) # UMAP is running on the raw data
 # Run 2D UMAP plot
 # Here, we can manually subset faculty and then rerun the UMAP. This gives us more power to "zoom in". Later, can make this process more automated.
 umap_df = pd.DataFrame(umap_data, columns=["V1", "V2"])
-umap_df['Faculty_Full_Name'] = rawData['Faculty_Full_Name']
+umap_df['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
 fig = px.scatter(umap_df, x="V1", y="V2", title="UMAP", hover_name="Faculty_Full_Name", hover_data={"V1": False, "V2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
-fig.update_layout(plot_bgcolor='#255799')
-fig.update_xaxes(title_text="")
-fig.update_yaxes(title_text="")
-fig.update_xaxes(showticklabels=False)
-fig.update_yaxes(showticklabels=False)
-fig.show()
+fig_show(fig)
 
 # Run an elbow plot
 ## We will need to code this. An elbow plot gives a rough value for the number of components to run UMAP on. Then, we will plug this number (where the elbow bends) into the num_components parameter in UMAP.
+numeric_data_umap = umap_df.select_dtypes(include=['number'])
+scaler = StandardScaler()
+scaled_data_umap = scaler.fit_transform(numeric_data_umap)
+wcss = []
+for i in range(1, 11):
+    kmeans = KMeans(n_clusters=i, random_state=42, n_init="auto")
+    kmeans.fit(scaled_data_umap)
+    wcss.append(kmeans.inertia_)
+plt.figure(figsize=(10, 6))
+plt.plot(range(1, 11), wcss, marker='o', linestyle='--')
+plt.title('Elbow Method (UMAP)')
+plt.xlabel('Number of Clusters')
+plt.ylabel('WCSS')
+plt.xticks(range(1, 11))
+plt.grid(True)
+plt.show()
+
 
 # Run UMAP with PCA components
 # UMAP takes into account different dimensions and represnts the information in 2D. If you want smaller and more refined clusters, then use more components. But the starting number of components is usually based on the elbow plot.
@@ -72,44 +99,34 @@ pca_result = PCA().fit_transform(numeric_data)
 num_components = 3
 pca_scores = pca_result[:, :num_components]
 umap_result = UMAP().fit_transform(pca_scores)
-umapDf_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
-umapDf_pca['Faculty_Full_Name'] = rawData['Faculty_Full_Name']
-fig = px.scatter(umapDf_pca, x="V1", y="V2", title="UMAP on PCA Components", hover_name="Faculty_Full_Name", hover_data={"V1": False, "V2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
-fig.update_layout(plot_bgcolor='#255799')
-fig.update_xaxes(title_text="")
-fig.update_yaxes(title_text="")
-fig.update_xaxes(showticklabels=False)
-fig.update_yaxes(showticklabels=False)
-fig.show()
+umap_df_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
+umap_df_pca['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
+fig = px.scatter(umap_df_pca, x="V1", y="V2", title="UMAP on PCA Components", hover_name="Faculty_Full_Name", hover_data={"V1": False, "V2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
+fig_show(fig)
 
 # Run UMAPs by iterating through different number of PCA components
 for num_components in range(1, 7):
     pca_scores = pca_result[:, :num_components]
     umap_result = UMAP(random_state=123).fit_transform(pca_scores)
-    umapDf_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
-    umapDf_pca['Faculty_Full_Name'] = rawData['Faculty_Full_Name']
-    fig = px.scatter(umapDf_pca, x="V1", y="V2", title=f"UMAP with {num_components} PCA Components", hover_name="Faculty_Full_Name", hover_data={"V1": False, "V2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
-    fig.update_layout(plot_bgcolor='#255799')
-    fig.update_xaxes(title_text="")
-    fig.update_yaxes(title_text="")
-    fig.update_xaxes(showticklabels=False)
-    fig.update_yaxes(showticklabels=False)
-    fig.show()
+    umap_df_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
+    umap_df_pca['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
+    fig = px.scatter(umap_df_pca, x="V1", y="V2", title=f"UMAP with {num_components} PCA Components", hover_name="Faculty_Full_Name", hover_data={"V1": False, "V2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
+    fig_show(fig)
 
 # Update the number of components after iteration and looking at the elbow plot. This update will be used for the rest of the analysis.
 num_components = 5
 pca_scores = pca_result[:, :num_components]
 umap_result = UMAP(random_state=123).fit_transform(pca_scores)
-umapDf_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
-umapDf_pca['Faculty_Full_Name'] = rawData['Faculty_Full_Name']
+umap_df_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
+umap_df_pca['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
 
 # Cluster UMAP with DBSCAN
 knn = NearestNeighbors(n_neighbors=2)
 knn.fit(pca_scores)
 distances, indices = knn.kneighbors(pca_scores)
 dbs = DBSCAN(eps=0.05, min_samples=2).fit(pca_scores)
-umapDf_pca['cluster'] = dbs.labels_
-umapDf_pca['Faculty_Full_Name'] = rawData['Faculty_Full_Name'] # Add faculty names back to dataframe
+umap_df_pca['cluster'] = dbs.labels_
+umap_df_pca['Faculty_Full_Name'] = raw_data['Faculty_Full_Name'] # Add faculty names back to dataframe
 
 # This section runs two different clustering methods: Leiden and K-means. The first one is on the PCA scores, and the second one is on the UMAP coordinates. However, the Leiden clustering is not working as well as K-means right now. K-mean is fine to use for the final analysis.
 
@@ -135,30 +152,27 @@ partition = la.find_partition(
 )
 
 # Add Leiden cluster assignments to the dataframe
-umapDf_pca['leiden_cluster'] = [membership for membership in partition.membership]
+umap_df_pca['leiden_cluster'] = [membership for membership in partition.membership]
 
 # Print the number of clusters found
 num_clusters = len(set(partition.membership))
-print(f"Number of clusters found: {num_clusters}")
+# print(f"Number of clusters found: {num_clusters}")
 
 # Visualize UMAP with Leiden clusters
 fig = px.scatter(
-    umapDf_pca, 
+    umap_df_pca, 
     x="V1", 
     y="V2", 
     title="UMAP with Leiden Clustering", 
     # hover_name="Faculty_Full_Name", 
     color="leiden_cluster",
     color_discrete_sequence=px.colors.qualitative.Bold,  # Use a discrete color palette
-    category_orders={"leiden_cluster": sorted(umapDf_pca["leiden_cluster"].unique())},  # Order the categories
+    category_orders={"leiden_cluster": sorted(umap_df_pca["leiden_cluster"].unique())},  # Order the categories
     hover_data={"V1": False, "V2": False}, 
     width=800, 
     height=800
 )
-fig.update_layout(plot_bgcolor='#255799')
-fig.update_xaxes(title_text="", showticklabels=False)
-fig.update_yaxes(title_text="", showticklabels=False)
-fig.show()
+fig_show(fig)
 
 ### Leiden clustering on UMAP coordinates
 # Create a k-nearest neighbors graph from UMAP coordinates instead of PCA scores
@@ -188,29 +202,26 @@ partition = la.find_partition(
 )
 
 # Add Leiden cluster assignments to the dataframe
-umapDf_pca['leiden_cluster'] = [membership for membership in partition.membership]
+umap_df_pca['leiden_cluster'] = [membership for membership in partition.membership]
 
 # Print the number of clusters found
 num_clusters = len(set(partition.membership))
-print(f"Number of clusters found: {num_clusters}")
+# print(f"Number of clusters found: {num_clusters}")
 
 # Visualize UMAP with Leiden clusters
 fig = px.scatter(
-    umapDf_pca, 
+    umap_df_pca, 
     x="V1", 
     y="V2", 
     title=f"UMAP with Leiden Clustering (resolution={resolution_parameter}, clusters={num_clusters})", 
     color="leiden_cluster",
     color_discrete_sequence=px.colors.qualitative.Bold,  # Use a discrete color palette
-    category_orders={"leiden_cluster": sorted(umapDf_pca["leiden_cluster"].unique())},  # Order the categories
+    category_orders={"leiden_cluster": sorted(umap_df_pca["leiden_cluster"].unique())},  # Order the categories
     hover_data={"V1": False, "V2": False}, 
     width=800, 
     height=800
 )
-fig.update_layout(plot_bgcolor='#255799')
-fig.update_xaxes(title_text="", showticklabels=False)
-fig.update_yaxes(title_text="", showticklabels=False)
-fig.show()
+fig_show(fig)
 
 # Identify optimal number of clusters using silhouette score
 ## Can go with highest peak but then won't include as many clusters. Can have a rule that I want X number of clusters.
@@ -223,8 +234,8 @@ def avg_silhouette(data, k):
 # Calculate silhouette scores for different K
 # Min number of clusters is 2. Max number of clusters is 50.
 k_values = range(2, 50)
-umapDf_pca = umapDf_pca.drop(columns=['Faculty_Full_Name'])
-sil_values = [avg_silhouette(umapDf_pca, k) for k in k_values]
+umap_df_pca = umap_df_pca.drop(columns=['Faculty_Full_Name'])
+sil_values = [avg_silhouette(umap_df_pca, k) for k in k_values]
 plt.figure()
 plt.plot(k_values, sil_values, 'b*-')
 plt.xlabel('Number of clusters K')
@@ -241,15 +252,15 @@ kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
 cluster_labels = kmeans.fit_predict(umap_result)
 
 # Add K-means cluster assignments to the dataframe
-umapDf_pca['kmeans_cluster'] = cluster_labels
+umap_df_pca['kmeans_cluster'] = cluster_labels
 
 # Print the number of clusters
 print(f"Number of K-means clusters: {n_clusters}")
 
 # Visualize UMAP with K-means clusters
-umapDf_pca['Faculty_Full_Name'] = rawData['Faculty_Full_Name']
+umap_df_pca['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
 fig = px.scatter(
-    umapDf_pca, 
+    umap_df_pca, 
     x="V1", 
     y="V2", 
     color='kmeans_cluster', 
@@ -260,12 +271,7 @@ fig = px.scatter(
     height=800, 
     color_discrete_sequence=px.colors.qualitative.Bold  # Use a discrete color palette
 )
-fig.update_layout(plot_bgcolor='#255799')
-fig.update_xaxes(title_text="")
-fig.update_yaxes(title_text="")
-fig.update_xaxes(showticklabels=False)
-fig.update_yaxes(showticklabels=False)
-fig.show()
+fig_show(fig)
 
 # Process clustering results and prepare for analysis
 ## This block creates a dataframe with numeric data, adds cluster labels, ensures proper data types, and identifies feature columns for further analysis
@@ -318,10 +324,10 @@ print(f"Found {len(sig_features)} significant features:")
 print(sig_features[['Feature', 'p_adjusted']])
 
 # Visualize top significant features
-def plot_top_features(clustered_df, sig_features, top_n=16):
+def plot_top_features(clustered_df, sig_features, top_n=10):
     top_features = sig_features['Feature'].head(top_n).tolist()
     
-    plt.figure(figsize=(12, 8))
+    plt.figure(figsize=(15, 10))
     for i, feature in enumerate(top_features):
         plt.subplot(2, 5, i+1)
         sns.boxplot(x='cluster', y=feature, data=clustered_df)
@@ -337,20 +343,23 @@ if len(sig_features) > 0:
 
 filtered_data_df.columns = filtered_data_df.columns.str.replace(' ', '_').str.replace(',', '_').str.replace('-', '_')
 feature_names = filtered_data_df.columns[:-1]
-umapDf_pca = umapDf_pca.drop(columns=['Faculty_Full_Name'])
+umap_df_pca = umap_df_pca.drop(columns=['Faculty_Full_Name'])
 
 # Save outputs
-path = '/Users/justinsarkis/Downloads/'
-sig_df_path = os.path.join(path, "Significant_terms_per_cluster.csv")
-cluster_df_path = os.path.join(path, "Professors_in_clusters.csv")
-fig_path = os.path.join(path, "UMAP_professors_clusters.pdf")
+sig_df_path = "Significant_terms_per_cluster.csv"
+cluster_df_path = "Professors_in_clusters.csv"
+fig_path = "UMAP_professors_clusters.pdf"
 
-umapDf_pca = umapDf_pca.join(faculty_column, how='left')
-umapDf_pca = umapDf_pca.groupby('cluster')['Faculty_Full_Name'].apply(list).reset_index()
-umapDf_pca.to_csv(cluster_df_path,index=True)
+# Your data manipulation and saving logic (unchanged)
+umap_df_pca = umap_df_pca.join(faculty_column, how='left')
+umap_df_pca = umap_df_pca.groupby('cluster')['Faculty_Full_Name'].apply(list).reset_index()
+umap_df_pca.to_csv(cluster_df_path, index=True)
+
+print("sig_features:", sig_features['Feature'].tolist()) #added tolist()
+print("p_adjusted:", results_df['p_adjusted'].tolist()) #added print statement to see p_adjusted values.
 
 sig_df = pd.DataFrame({
-    'Feature': sig_features,
-    'P-Value Adjusted': p_adjusted[:len(sig_features)]
+    'Feature': sig_features['Feature'].tolist(),  # Extract the 'Feature' column as a list
+    'P-Value Adjusted': results_df['p_adjusted'].tolist()[:len(sig_features)] #use results_df, and slice to the correct length.
 })
 sig_df.to_csv(sig_df_path, index=True)

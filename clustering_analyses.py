@@ -107,11 +107,10 @@ plt.xticks(range(1, 11))
 plt.grid(True)
 plt.show()
 
-
 # Run UMAP with PCA components
 # UMAP takes into account different dimensions and represnts the information in 2D. If you want smaller and more refined clusters, then use more components. But the starting number of components is usually based on the elbow plot.
 pca_result = PCA().fit_transform(feature_matrix)
-num_components = 2
+num_components = 3
 pca_reduced_features = pca_result[:, :num_components]
 umap_result = UMAP().fit_transform(pca_reduced_features)
 umap_df_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
@@ -129,7 +128,7 @@ for num_components in config['pca_components_to_try']:
     fig_show(fig)
 
 # Update the number of components after iteration and looking at the elbow plot. This update will be used for the rest of the analysis.
-num_components = config['final_pca_components']
+num_components = 5
 pca_reduced_features = pca_result[:, :num_components]
 umap_result = UMAP(random_state=123).fit_transform(pca_reduced_features)
 umap_df_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
@@ -260,7 +259,7 @@ plt.show()
 
 ### K-means clustering on UMAP coordinates
 # Number of clusters for K-means
-n_clusters = config['final_pca_components'] # You can adjust this parameter to get desired number of clusters
+n_clusters = 8 # You can adjust this parameter to get desired number of clusters
 
 # Perform K-means clustering on UMAP coordinates
 kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)

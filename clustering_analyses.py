@@ -1,3 +1,4 @@
+from collections import Counter
 import pandas as pd
 import numpy as np
 from sklearn.decomposition import PCA
@@ -35,7 +36,8 @@ config = {
     'anova_alpha': 0.05,
     'top_n_features_to_plot': 10,
     'cluster_output_path': 'Professors_in_clusters.csv',
-    'anova_output_path': 'Significant_terms_per_cluster.csv'
+    'anova_output_path': 'Significant_terms_per_cluster.csv', 
+    'top_mesh_terms_output_path': 'Top_Mesh_Terms_Per_Professor.csv',
 }
 
 def load_and_preprocess_data(file_path, index_col='Faculty_Full_Name'):
@@ -58,6 +60,26 @@ def fig_show(fig):
 
 raw_data, feature_matrix, faculty_names_df = load_and_preprocess_data(config['file_path'])
 
+mesh_term_columns = [col for col in feature_matrix.columns]
+
+# Calculate the top 3 MeSH terms for each professor
+top_mesh_terms_list = []
+faculty_names = []
+for index, row in raw_data.iterrows():
+    professor_name = row['Faculty_Full_Name']
+    mesh_term_counts = Counter()
+    for term in mesh_term_columns:
+        count = row[term]
+        if count > 0:
+            mesh_term_counts[term] = count
+    top_3_terms = [term for term, count in mesh_term_counts.most_common(3)]
+    top_mesh_terms_list.append([top_3_terms])  # Store as a list within a list
+    faculty_names.append(professor_name)
+
+top_mesh_terms_df = pd.DataFrame({'Faculty_Full_Name': faculty_names, 'Top_Mesh_Terms': top_mesh_terms_list})
+top_mesh_terms_df.set_index('Faculty_Full_Name', inplace=True)
+top_mesh_terms_df.to_csv(config['top_mesh_terms_output_path'])
+
 # Set up and run PCA on the raw data (columns = MeSH terms, rows = faculty members, values = frquency of terms)
 pca = PCA()
 pca_embeddings = pca.fit_transform(feature_matrix)
@@ -74,7 +96,11 @@ plt.show()
 # Run PCA scatter plot
 ## This plot shows that the faculty members are not well separated with just two components. Therefore, additional components are needed to further separate the faculty members. A couple of outliers appear and who may be driving differences.
 pca_embeddings_df = pd.DataFrame(pca_embeddings, columns=[f'PC{i+1}' for i in range(pca_embeddings.shape[1])])
-fig = px.scatter(pca_embeddings_df, x='PC1', y='PC2')
+pca_embeddings_df['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
+pca_embeddings_df = pca_embeddings_df.merge(top_mesh_terms_df, on='Faculty_Full_Name', how='left')
+fig = px.scatter(pca_embeddings_df, x='PC1', y='PC2', hover_name='Faculty_Full_Name',
+                 hover_data={'PC1': False, 'PC2': False,
+                             'Top_Mesh_Terms': True})
 fig.show()
 
 # Set up UMAP
@@ -85,7 +111,11 @@ umap_embeddings = UMAP().fit_transform(feature_matrix) # UMAP is running on the 
 # Here, we can manually subset faculty and then rerun the UMAP. This gives us more power to "zoom in". Later, can make this process more automated.
 umap_embeddings_df = pd.DataFrame(umap_embeddings, columns=["V1", "V2"])
 umap_embeddings_df['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
-fig = px.scatter(umap_embeddings_df, x="V1", y="V2", title="UMAP", hover_name="Faculty_Full_Name", hover_data={"V1": False, "V2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
+umap_embeddings_df = umap_embeddings_df.merge(top_mesh_terms_df, on='Faculty_Full_Name', how='left')
+fig = px.scatter(umap_embeddings_df, x="V1", y="V2", title="UMAP", hover_name="Faculty_Full_Name",
+                 hover_data={"V1": False, "V2": False,
+                             'Top_Mesh_Terms': True},
+                 width=800, height=800, color_discrete_sequence=['#fecc07'])
 fig_show(fig)
 
 # Run an elbow plot
@@ -116,7 +146,11 @@ pca_reduced_features = pca_result[:, :num_components]
 umap_result = UMAP().fit_transform(pca_reduced_features)
 umap_df_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
 umap_df_pca['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
-fig = px.scatter(umap_df_pca, x="V1", y="V2", title="UMAP on PCA Components", hover_name="Faculty_Full_Name", hover_data={"V1": False, "V2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
+umap_df_pca = umap_df_pca.merge(top_mesh_terms_df, on='Faculty_Full_Name', how='left')
+fig = px.scatter(umap_df_pca, x="V1", y="V2", title="UMAP on PCA Components", hover_name="Faculty_Full_Name",
+                 hover_data={"V1": False, "V2": False,
+                             'Top_Mesh_Terms': True},
+                 width=800, height=800, color_discrete_sequence=['#fecc07'])
 fig_show(fig)
 
 # Run UMAPs by iterating through different number of PCA components
@@ -125,7 +159,12 @@ for num_components in config['pca_components_to_try']:
     umap_result = UMAP(random_state=123).fit_transform(pca_reduced_features)
     umap_df_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
     umap_df_pca['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
-    fig = px.scatter(umap_df_pca, x="V1", y="V2", title=f"UMAP with {num_components} PCA Components", hover_name="Faculty_Full_Name", hover_data={"V1": False, "V2": False}, width=800, height=800, color_discrete_sequence=['#fecc07'])
+    umap_df_pca = umap_df_pca.merge(top_mesh_terms_df, on='Faculty_Full_Name', how='left')
+    fig = px.scatter(umap_df_pca, x="V1", y="V2", title=f"UMAP with {num_components} PCA Components",
+                     hover_name="Faculty_Full_Name",
+                     hover_data={"V1": False, "V2": False,
+                                 'Top_Mesh_Terms': True},
+                     width=800, height=800, color_discrete_sequence=['#fecc07'])
     fig_show(fig)
 
 # Update the number of components after iteration and looking at the elbow plot. This update will be used for the rest of the analysis.
@@ -134,6 +173,7 @@ pca_reduced_features = pca_result[:, :num_components]
 umap_result = UMAP(random_state=123).fit_transform(pca_reduced_features)
 umap_df_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
 umap_df_pca['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
+umap_df_pca = umap_df_pca.merge(top_mesh_terms_df, on='Faculty_Full_Name', how='left')
 
 # Cluster UMAP with DBSCAN
 knn = NearestNeighbors(n_neighbors=2)
@@ -175,16 +215,17 @@ num_clusters = len(set(partition.membership))
 
 # Visualize UMAP with Leiden clusters
 fig = px.scatter(
-    umap_df_pca, 
-    x="V1", 
-    y="V2", 
-    title="UMAP with Leiden Clustering", 
-    # hover_name="Faculty_Full_Name", 
+    umap_df_pca,
+    x="V1",
+    y="V2",
+    title="UMAP with Leiden Clustering",
     color="leiden_cluster",
     color_discrete_sequence=px.colors.qualitative.Bold,  # Use a discrete color palette
     category_orders={"leiden_cluster": sorted(umap_df_pca["leiden_cluster"].unique())},  # Order the categories
-    hover_data={"V1": False, "V2": False}, 
-    width=800, 
+    hover_name="Faculty_Full_Name",
+    hover_data={"V1": False, "V2": False,
+                'Top_Mesh_Terms': True},
+    width=800,
     height=800
 )
 fig_show(fig)
@@ -225,15 +266,17 @@ num_clusters = len(set(partition.membership))
 
 # Visualize UMAP with Leiden clusters
 fig = px.scatter(
-    umap_df_pca, 
-    x="V1", 
-    y="V2", 
-    title=f"UMAP with Leiden Clustering (resolution={resolution_parameter}, clusters={num_clusters})", 
+    umap_df_pca,
+    x="V1",
+    y="V2",
+    title=f"UMAP with Leiden Clustering (resolution={resolution_parameter}, clusters={num_clusters})",
     color="leiden_cluster",
     color_discrete_sequence=px.colors.qualitative.Bold,  # Use a discrete color palette
     category_orders={"leiden_cluster": sorted(umap_df_pca["leiden_cluster"].unique())},  # Order the categories
-    hover_data={"V1": False, "V2": False}, 
-    width=800, 
+    hover_name="Faculty_Full_Name",
+    hover_data={"V1": False, "V2": False,
+                'Top_Mesh_Terms': True},
+    width=800,
     height=800
 )
 fig_show(fig)
@@ -241,7 +284,7 @@ fig_show(fig)
 # Identify optimal number of clusters using silhouette score
 ## Can go with highest peak but then won't include as many clusters. Can have a rule that I want X number of clusters.
 def avg_silhouette(data, k):
-    kmeans = KMeans(n_clusters=k, random_state=123).fit(data)
+    kmeans = KMeans(n_clusters=k, random_state=123, n_init="auto").fit(data)
     labels = kmeans.labels_
     sil_score = silhouette_score(data, labels)
     return sil_score
@@ -249,8 +292,17 @@ def avg_silhouette(data, k):
 # Calculate silhouette scores for different K
 # Min number of clusters is 2. Max number of clusters is 50.
 k_values = range(2, 50)
-umap_df_pca = umap_df_pca.drop(columns=['Faculty_Full_Name'])
-silhouette_scores = [avg_silhouette(umap_df_pca, k) for k in k_values]
+# umap_df_pca = umap_df_pca.drop(columns=['Faculty_Full_Name'])
+# silhouette_scores = [avg_silhouette(umap_df_pca, k) for k in k_values]
+# plt.figure()
+# plt.plot(k_values, silhouette_scores, 'b*-')
+# plt.xlabel('Number of clusters K')
+# plt.ylabel('Average Silhouette Width')
+# plt.title('Silhouette Score for Different K')
+# plt.show()
+umap_embeddings_for_silhouette = umap_df_pca[['V1', 'V2']].copy()
+
+silhouette_scores = [avg_silhouette(umap_embeddings_for_silhouette, k) for k in k_values]
 plt.figure()
 plt.plot(k_values, silhouette_scores, 'b*-')
 plt.xlabel('Number of clusters K')
@@ -275,15 +327,15 @@ print(f"Number of K-means clusters: {n_clusters}")
 # Visualize UMAP with K-means clusters
 umap_df_pca['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
 fig = px.scatter(
-    umap_df_pca, 
-    x="V1", 
-    y="V2", 
-    color='kmeans_cluster', 
-    title=f"UMAP with K-means Clusters (k={n_clusters})", 
-    hover_name="Faculty_Full_Name", 
-    hover_data={"V1": False, "V2": False}, 
-    width=800, 
-    height=800, 
+    umap_df_pca,
+    x="V1",
+    y="V2",
+    color='kmeans_cluster',
+    title=f"UMAP with K-means Clusters (k={n_clusters})",
+    hover_name="Faculty_Full_Name",
+    hover_data={"V1": False, "V2": False, 'Top_Mesh_Terms': True},
+    width=800,
+    height=800,
     color_discrete_sequence=px.colors.qualitative.Bold  # Use a discrete color palette
 )
 fig_show(fig)

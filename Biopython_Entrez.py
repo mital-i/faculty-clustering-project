@@ -1,3 +1,4 @@
+# Load required libraries
 import openpyxl
 import pandas as pd
 from Bio import Entrez
@@ -7,52 +8,53 @@ import ssl
 import time
 
 # Disable SSL verification
-ssl._create_default_https_context = ssl._create_unverified_context
+#ssl._create_default_https_context = ssl._create_unverified_context
 
 # Load dataframes
 faculty_df = pd.read_excel('BioSci_Faculty.xlsx', sheet_name='minus_teaching')
 research_keywords_df = pd.read_excel('Research_Keywords.xlsx')
 faculty_proposal_mesh_terms_df = pd.read_excel('Faculty_Proposal_Abstracts.xlsx', sheet_name='proposal_abstracts_sheet')
-mapped_mesh_terms_df = pd.read_excel('research_keywords_cleaned_mesh_terms.xlsx', usecols=['Faculty', 'Mapped_Mesh_Terms'])
+mapped_mesh_terms_df = pd.read_excel('research_keywords_cleaned_mesh_terms.xlsx', usecols=['Faculty_Full_Name', 'Mapped_Mesh_Terms'])
 
-# # Set Entrez email
-# Entrez.email = "sarkisj@uci.edu"
+# Set Entrez email
+Entrez.email = "sarkisj@uci.edu"
 
-# # Fetch PMIDs for each faculty member
-# faculty_df["pmids"] = None
-# for index, row in faculty_df.iterrows():
-#     search_term = row["Faculty_Author_Affiliation"]
-#     handle_search = Entrez.esearch(db="pubmed", mindate="2015", maxdate="2025", term=search_term)
-#     record = Entrez.read(handle_search)
-#     faculty_df.at[index, "pmids"] = record["IdList"]
-#     handle_search.close()
+# Fetch PMIDs for each faculty member
+faculty_df["pmids"] = None
+for index, row in faculty_df.iterrows():
+    search_term = row["Faculty_Author_Affiliation"]
+    handle_search = Entrez.esearch(db="pubmed", mindate="2022", maxdate="2025", term=search_term)
+    record = Entrez.read(handle_search)
+    faculty_df.at[index, "pmids"] = record["IdList"]
+    handle_search.close()
 
-# # Fetch MeSH terms for each PMID
-# faculty_df['pub_mesh_terms'] = None
-# for index, row in faculty_df.iterrows():
-#     pmid_list = row['pmids'] 
-#     mesh_term_texts = []
-#     for pmid in pmid_list:
-#         handle_mesh = Entrez.efetch(db="pubmed", id=pmid, rettype="xml")
-#         record = Entrez.read(handle_mesh)
-#         if record["PubmedArticle"]:
-#             medline = record["PubmedArticle"][0]["MedlineCitation"]
-#             mesh_headings = medline.get("MeshHeadingList", [])
-#             for mesh_heading in mesh_headings:
-#                 descriptor_name_element = mesh_heading.get("DescriptorName")
-#                 if descriptor_name_element:
-#                     descriptor_name = str(descriptor_name_element)  # Convert StringElement to string
-#                     mesh_term_texts.append(descriptor_name)
-#         handle_mesh.close()
-#         time.sleep(0.5)
+# Fetch MeSH terms for each PMID
+faculty_df['pub_mesh_terms'] = None
+for index, row in faculty_df.iterrows():
+    pmid_list = row['pmids'] 
+    mesh_term_texts = []
+    for pmid in pmid_list:
+        handle_mesh = Entrez.efetch(db="pubmed", id=pmid, rettype="xml")
+        record = Entrez.read(handle_mesh)
+        if record["PubmedArticle"]:
+            medline = record["PubmedArticle"][0]["MedlineCitation"]
+            mesh_headings = medline.get("MeshHeadingList", [])
+            for mesh_heading in mesh_headings:
+                descriptor_name_element = mesh_heading.get("DescriptorName")
+                if descriptor_name_element:
+                    descriptor_name = str(descriptor_name_element)  # Convert StringElement to string
+                    mesh_term_texts.append(descriptor_name)
+        handle_mesh.close()
+        time.sleep(0.5)
 
-#     faculty_df.at[index, 'pub_mesh_terms'] = '; '.join(mesh_term_texts)
+    faculty_df.at[index, 'pub_mesh_terms'] = '; '.join(mesh_term_texts)
 
-# output_file = 'faculty_pulled_mesh_terms.csv'
-# faculty_df.to_csv(output_file, index=False)
+output_file = 'faculty_pulled_mesh_terms.csv'
+faculty_df.to_csv(output_file, index=False)
 
 output_file = 'faculty_pulled_mesh_terms.csv'
 faculty_df = pd.read_csv(output_file)
+
 # Process proposal MeSH terms
 faculty_proposal_mesh_terms_df['Proposal_Mesh_Terms'] = faculty_proposal_mesh_terms_df['Proposal_Mesh_Terms'].astype(str)
 
@@ -73,14 +75,38 @@ proposal_mesh_terms_df['Proposal_Mesh_Terms'] = proposal_mesh_terms_df['Proposal
 # Merge dataframes
 merged_df = pd.merge(faculty_df, proposal_mesh_terms_df, on='Faculty', how='left')
 merged_df.drop(columns=['Faculty_Author', 'Faculty_Author_Affiliation'], inplace=True)
-combined_faculty_df = pd.merge(merged_df, mapped_mesh_terms_df, on="Faculty", how='left')
+combined_faculty_df = pd.merge(merged_df, mapped_mesh_terms_df, on="Faculty_Full_Name", how='left')
 
-# Combine MeSH terms
+# Combine MeSH terms - corrected version
+# First, replace NaN values with empty strings
+combined_faculty_df['Proposal_Mesh_Terms'] = combined_faculty_df['Proposal_Mesh_Terms'].fillna('')
+combined_faculty_df['Mapped_Mesh_Terms'] = combined_faculty_df['Mapped_Mesh_Terms'].fillna('')
+combined_faculty_df['pub_mesh_terms'] = combined_faculty_df['pub_mesh_terms'].fillna('')
+
+# Create a function to combine terms properly
+def combine_mesh_terms(row):
+    terms = []
+    if row['Proposal_Mesh_Terms'] and row['Proposal_Mesh_Terms'].strip():
+        terms.append(row['Proposal_Mesh_Terms'])
+    if row['Mapped_Mesh_Terms'] and row['Mapped_Mesh_Terms'].strip():
+        terms.append(row['Mapped_Mesh_Terms'])
+    if row['pub_mesh_terms'] and row['pub_mesh_terms'].strip():
+        terms.append(row['pub_mesh_terms'])
+    
+    return '; '.join(terms)
+
+# Apply the function to create the combined column
+combined_faculty_df['Combined_Mesh_Terms'] = combined_faculty_df.apply(combine_mesh_terms, axis=1)
+
+# Drop original columns if needed
+combined_faculty_df.drop(columns=['Proposal_Mesh_Terms', 'Mapped_Mesh_Terms', 'pmids', 'pub_mesh_terms'], inplace=True)
+
+""" # Combine MeSH terms
 combined_faculty_df['Proposal_Mesh_Terms'].fillna('', inplace=True)
 combined_faculty_df['Mapped_Mesh_Terms'].fillna('', inplace=True)
 combined_faculty_df['Combined_Mesh_Terms'] = combined_faculty_df['Proposal_Mesh_Terms'] + '; ' + combined_faculty_df['Mapped_Mesh_Terms']
 combined_faculty_df['Combined_Mesh_Terms'] = combined_faculty_df['Combined_Mesh_Terms'].str.strip('; ')
-combined_faculty_df.drop(columns=['Proposal_Mesh_Terms', 'Mapped_Mesh_Terms', 'pmids'], inplace=True)
+combined_faculty_df.drop(columns=['Proposal_Mesh_Terms', 'Mapped_Mesh_Terms', 'pmids'], inplace=True) """
 
 # Remove unhelpful MeSH terms
 remove_terms = [

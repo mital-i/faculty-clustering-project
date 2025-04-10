@@ -457,6 +457,36 @@ filtered_data_df.columns = filtered_data_df.columns.str.replace(' ', '_').str.re
 feature_names = filtered_data_df.columns[:-1]
 umap_df_pca = umap_df_pca.drop(columns=['Faculty_Full_Name'])
 
+# Display all unique mesh terms associated with professor
+def get_faculty_mesh_terms(faculty_list, raw_data, mesh_term_columns):
+    faculty_mesh_terms = {}
+    all_terms = []
+
+    for faculty_name in faculty_list:
+        if faculty_name in raw_data['Faculty_Full_Name'].values:
+            faculty_row = raw_data[raw_data['Faculty_Full_Name'] == faculty_name].iloc[0]
+            unique_terms = [term for term in mesh_term_columns if faculty_row[term] > 0]
+            faculty_mesh_terms[faculty_name] = unique_terms
+            all_terms.extend(unique_terms)
+        else:
+            faculty_mesh_terms[faculty_name] = f"Faculty member '{faculty_name}' not found in the data."
+
+    # Find overlapping terms
+    term_counts = Counter(all_terms)
+    overlapping_terms = {term for term, count in term_counts.items() if count == len(faculty_list) and term in [term for terms in faculty_mesh_terms.values() if isinstance(terms, list) for term in terms]}
+
+    return faculty_mesh_terms, overlapping_terms
+
+# Example Usage (assuming your raw_data and mesh_term_columns are already defined):
+faculty_to_check = ["Bracken, Matthew", "Allison, Steven", "Treseder, Kathleen"]
+faculty_mesh_results, common_terms = get_faculty_mesh_terms(faculty_to_check, raw_data, mesh_term_columns)
+
+for faculty, terms in faculty_mesh_results.items():
+    print(f"{faculty}: {terms}")
+
+print("\nOverlapping MeSH terms:")
+print(common_terms)
+
 # Save outputs
 sig_df_path = "Significant_terms_per_cluster.csv"
 cluster_df_path = "Professors_in_clusters.csv"
@@ -467,8 +497,8 @@ umap_df_pca = umap_df_pca.join(faculty_names_df, how='left')
 umap_df_pca = umap_df_pca.groupby('cluster')['Faculty_Full_Name'].apply(list).reset_index()
 umap_df_pca.to_csv(cluster_df_path, index=True)
 
-print("significant_features_df:", significant_features_df['Feature'].tolist()) #added tolist()
-print("adjusted_p_values:", results_df['adjusted_p_values'].tolist()) #added print statement to see adjusted_p_values values.
+# print("significant_features_df:", significant_features_df['Feature'].tolist()) #added tolist()
+# print("adjusted_p_values:", results_df['adjusted_p_values'].tolist()) #added print statement to see adjusted_p_values values.
 
 significant_features_output_df = pd.DataFrame({
     'Feature': significant_features_df['Feature'].tolist(),  # Extract the 'Feature' column as a list

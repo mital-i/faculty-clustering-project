@@ -119,7 +119,7 @@ fig = px.scatter(umap_embeddings_df, x="V1", y="V2", title="UMAP", hover_name="F
 fig_show(fig)
 
 # Run an elbow plot
-## We will need to code this. An elbow plot gives a rough value for the number of components to run UMAP on. Then, we will plug this number (where the elbow bends) into the num_components parameter in UMAP.
+## An elbow plot gives a rough value for the number of components to run UMAP on. Then, we will plug this number (where the elbow bends) into the num_components parameter in UMAP.
 numeric_data_umap = umap_embeddings_df.select_dtypes(include=['number'])
 scaler = StandardScaler()
 scaled_data_umap = scaler.fit_transform(numeric_data_umap)
@@ -136,7 +136,6 @@ plt.ylabel('WCSS')
 plt.xticks(range(1, 11))
 plt.grid(True)
 plt.show()
-
 
 # Run UMAP with PCA components
 # UMAP takes into account different dimensions and represnts the information in 2D. If you want smaller and more refined clusters, then use more components. But the starting number of components is usually based on the elbow plot.
@@ -168,7 +167,7 @@ for num_components in config['pca_components_to_try']:
     fig_show(fig)
 
 # Update the number of components after iteration and looking at the elbow plot. This update will be used for the rest of the analysis.
-num_components = config['final_pca_components']
+num_components = 5
 pca_reduced_features = pca_result[:, :num_components]
 umap_result = UMAP(random_state=123).fit_transform(pca_reduced_features)
 umap_df_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
@@ -312,7 +311,7 @@ plt.show()
 
 ### K-means clustering on UMAP coordinates
 # Number of clusters for K-means
-n_clusters = config['final_pca_components'] # You can adjust this parameter to get desired number of clusters
+n_clusters = 8 # You can adjust this parameter to get desired number of clusters
 
 # Perform K-means clustering on UMAP coordinates
 kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
@@ -407,6 +406,52 @@ def plot_top_features(cluster_feature_matrix, significant_features_df, top_n=10)
 # If there are significant features, plot them
 if len(significant_features_df) > 0:
     plot_top_features(cluster_feature_matrix, significant_features_df)
+
+# ADD NEW CODE BLOCK #3 HERE - Calculate Within-Cluster Similarity
+# Calculate average similarity within each cluster
+within_cluster_similarity = {}
+for cluster_id in cluster_feature_matrix['cluster'].unique():
+    # Get data for this cluster
+    cluster_data = cluster_feature_matrix[cluster_feature_matrix['cluster'] == cluster_id][feature_names]
+    
+    # Skip if only one member in cluster
+    if len(cluster_data) <= 1:
+        within_cluster_similarity[cluster_id] = float('nan')
+        continue
+        
+    # Calculate pairwise cosine similarities
+    from sklearn.metrics.pairwise import cosine_similarity
+    similarities = cosine_similarity(cluster_data)
+    
+    # Average similarity (excluding self-similarity on diagonal)
+    n = similarities.shape[0]
+    total_sim = similarities.sum() - n  # Subtract diagonal (self-similarities)
+    avg_sim = total_sim / (n * (n - 1))  # n(n-1) pairs
+    
+    within_cluster_similarity[cluster_id] = avg_sim
+
+# Create DataFrame and save
+similarity_df = pd.DataFrame.from_dict(within_cluster_similarity, 
+                                      orient='index', 
+                                      columns=['Average_Similarity'])
+similarity_df.to_csv("Within_cluster_similarity.csv")
+
+# ADD NEW CODE BLOCK #4 HERE - Visualize Cluster Profiles
+# Create a heatmap of top terms across clusters
+top_n = 20  # Number of top terms to include (adjust as needed)
+significant_terms = significant_features_df['Feature'].head(top_n).tolist()
+
+# Calculate cluster means for these terms
+cluster_profiles = cluster_feature_matrix.groupby('cluster')[significant_terms].mean()
+
+# Plot heatmap
+plt.figure(figsize=(10, 14))  # Tall figure
+# Transpose the dataframe so terms are rows
+sns.heatmap(cluster_profiles.T, cmap="YlGnBu", annot=False)
+plt.title("Cluster Profiles: Top Significant Terms")
+plt.tight_layout()
+plt.savefig("Cluster_profiles_transposed.png", dpi=300, bbox_inches='tight')
+plt.show()
 
 filtered_data_df.columns = filtered_data_df.columns.str.replace(' ', '_').str.replace(',', '_').str.replace('-', '_')
 feature_names = filtered_data_df.columns[:-1]

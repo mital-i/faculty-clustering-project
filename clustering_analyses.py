@@ -21,22 +21,22 @@ import kaleido
 import networkx as nx
 import leidenalg as la
 import igraph as ig
-from sklearn.preprocessing import StandardScaler 
+from sklearn.preprocessing import StandardScaler
 
 config = {
     'file_path': 'mesh_terms_matrix_5yrs_and_keywords.xlsx',
-    #'pca_components_to_try': range(1, 7),
-    #'final_pca_components': 5,
+    'pca_components_to_try': range(1, 7),
+    'final_pca_components': 5,
     'dbscan_eps': 0.05,
     'dbscan_min_samples': 2,
-    #'leiden_resolution_pca': 0.2,
-    #'leiden_resolution_umap': 0.8,
-    #'kmeans_n_clusters': 5,
-    #'silhouette_k_range': range(2, 20),
+    'leiden_resolution_pca': 0.2,
+    'leiden_resolution_umap': 0.8,
+    'kmeans_n_clusters': 5,
+    'silhouette_k_range': range(2, 20),
     'anova_alpha': 0.05,
     'top_n_features_to_plot': 10,
     'cluster_output_path': 'Professors_in_clusters.csv',
-    'anova_output_path': 'Significant_terms_per_cluster.csv', 
+    'anova_output_path': 'significant_terms_per_cluster.csv', 
     'top_mesh_terms_output_path': 'Top_Mesh_Terms_Per_Professor.csv',
 }
 
@@ -72,8 +72,9 @@ for index, row in raw_data.iterrows():
         count = row[term]
         if count > 0:
             mesh_term_counts[term] = count
-    top_3_terms = [term for term, count in mesh_term_counts.most_common(3)]
-    top_mesh_terms_list.append([top_3_terms])  # Store as a list within a list
+    top_3_terms_with_prefix = [term for term, count in mesh_term_counts.most_common(5)]
+    top_3_terms_clean = [term.replace('Normalized_', '') for term in top_3_terms_with_prefix]
+    top_mesh_terms_list.append([top_3_terms_clean])  # Store as a list within a list
     faculty_names.append(professor_name)
 
 top_mesh_terms_df = pd.DataFrame({'Faculty_Full_Name': faculty_names, 'Top_Mesh_Terms': top_mesh_terms_list})
@@ -167,7 +168,7 @@ for num_components in config['pca_components_to_try']:
     fig_show(fig)
 
 # Update the number of components after iteration and looking at the elbow plot. This update will be used for the rest of the analysis.
-num_components = 5
+num_components = 1
 pca_reduced_features = pca_result[:, :num_components]
 umap_result = UMAP(random_state=123).fit_transform(pca_reduced_features)
 umap_df_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
@@ -182,103 +183,7 @@ dbscan_model = DBSCAN(eps=0.05, min_samples=2).fit(pca_reduced_features)
 umap_df_pca['cluster'] = dbscan_model.labels_
 umap_df_pca['Faculty_Full_Name'] = raw_data['Faculty_Full_Name'] # Add faculty names back to dataframe
 
-# This section runs two different clustering methods: Leiden and K-means. The first one is on the PCA scores, and the second one is on the UMAP coordinates. However, the Leiden clustering is not working as well as K-means right now. K-mean is fine to use for the final analysis.
-
-### Leiden clustering on PCA scores
-# Create a graph from the KNN results
-graph = nx.Graph()
-for i in range(len(pca_reduced_features)):
-    for j in indices[i]:
-        if i != j:  # Avoid self-loops
-            graph.add_edge(i, j)
-
-# Convert NetworkX graph to igraph for Leiden algorithm
-g_ig = ig.Graph.from_networkx(graph)
-
-# Set resolution parameter (higher values = more clusters)
-resolution_parameter = 0.2  # You can adjust this value to get desired number of clusters**
-
-# Run Leiden clustering with resolution parameter
-partition = la.find_partition(
-    g_ig, 
-    la.CPMVertexPartition, 
-    resolution_parameter=resolution_parameter
-)
-
-# Add Leiden cluster assignments to the dataframe
-umap_df_pca['leiden_cluster'] = [membership for membership in partition.membership]
-
-# Print the number of clusters found
-num_clusters = len(set(partition.membership))
-# print(f"Number of clusters found: {num_clusters}")
-
-# Visualize UMAP with Leiden clusters
-fig = px.scatter(
-    umap_df_pca,
-    x="V1",
-    y="V2",
-    title="UMAP with Leiden Clustering",
-    color="leiden_cluster",
-    color_discrete_sequence=px.colors.qualitative.Bold,  # Use a discrete color palette
-    category_orders={"leiden_cluster": sorted(umap_df_pca["leiden_cluster"].unique())},  # Order the categories
-    hover_name="Faculty_Full_Name",
-    hover_data={"V1": False, "V2": False,
-                'Top_Mesh_Terms': True},
-    width=800,
-    height=800
-)
-fig_show(fig)
-
-### Leiden clustering on UMAP coordinates
-# Create a k-nearest neighbors graph from UMAP coordinates instead of PCA scores
-k = 100  # You can adjust this parameter
-knn = NearestNeighbors(n_neighbors=k)
-knn.fit(umap_result)  # Using UMAP coordinates instead of PCA scores
-distances, indices = knn.kneighbors(umap_result)
-
-# Create a graph from the KNN results
-graph = nx.Graph()
-for i in range(len(umap_result)):
-    for j in indices[i]:
-        if i != j:  # Avoid self-loops
-            graph.add_edge(i, j)
-
-# Convert NetworkX graph to igraph for Leiden algorithm
-g_ig = ig.Graph.from_networkx(graph)
-
-# Set resolution parameter (higher values = more clusters)
-resolution_parameter = 0.8  # You can adjust this value to get desired number of clusters
-
-# Run Leiden clustering with resolution parameter
-partition = la.find_partition(
-    g_ig, 
-    la.CPMVertexPartition, 
-    resolution_parameter=resolution_parameter
-)
-
-# Add Leiden cluster assignments to the dataframe
-umap_df_pca['leiden_cluster'] = [membership for membership in partition.membership]
-
-# Print the number of clusters found
-num_clusters = len(set(partition.membership))
-# print(f"Number of clusters found: {num_clusters}")
-
-# Visualize UMAP with Leiden clusters
-fig = px.scatter(
-    umap_df_pca,
-    x="V1",
-    y="V2",
-    title=f"UMAP with Leiden Clustering (resolution={resolution_parameter}, clusters={num_clusters})",
-    color="leiden_cluster",
-    color_discrete_sequence=px.colors.qualitative.Bold,  # Use a discrete color palette
-    category_orders={"leiden_cluster": sorted(umap_df_pca["leiden_cluster"].unique())},  # Order the categories
-    hover_name="Faculty_Full_Name",
-    hover_data={"V1": False, "V2": False,
-                'Top_Mesh_Terms': True},
-    width=800,
-    height=800
-)
-fig_show(fig)
+# This section runs K-means clustering on UMAP coordinates.
 
 # Identify optimal number of clusters using silhouette score
 ## Can go with highest peak but then won't include as many clusters. Can have a rule that I want X number of clusters.
@@ -288,30 +193,31 @@ def avg_silhouette(data, k):
     sil_score = silhouette_score(data, labels)
     return sil_score
 
-# Calculate silhouette scores for different K
-# Min number of clusters is 2. Max number of clusters is 50.
-k_values = range(2, 50)
-# umap_df_pca = umap_df_pca.drop(columns=['Faculty_Full_Name'])
-# silhouette_scores = [avg_silhouette(umap_df_pca, k) for k in k_values]
-# plt.figure()
-# plt.plot(k_values, silhouette_scores, 'b*-')
-# plt.xlabel('Number of clusters K')
-# plt.ylabel('Average Silhouette Width')
-# plt.title('Silhouette Score for Different K')
-# plt.show()
+# Create a clean dataframe with only numeric columns for clustering
 umap_embeddings_for_silhouette = umap_df_pca[['V1', 'V2']].copy()
 
+# Calculate silhouette scores for different K values
+k_values = range(2, 10)
 silhouette_scores = [avg_silhouette(umap_embeddings_for_silhouette, k) for k in k_values]
-plt.figure()
+
+# Calculate silhouette scores for different K
+# Min number of clusters is 2. Max number of clusters is 50.
+# Plot the results
+plt.figure(figsize=(10, 6))
 plt.plot(k_values, silhouette_scores, 'b*-')
 plt.xlabel('Number of clusters K')
 plt.ylabel('Average Silhouette Width')
 plt.title('Silhouette Score for Different K')
+plt.grid(True, linestyle='--', alpha=0.7)
 plt.show()
+
+# Find the optimal number of clusters
+optimal_k = k_values[np.argmax(silhouette_scores)]
+print(f"Optimal number of clusters based on silhouette score: {optimal_k}")
 
 ### K-means clustering on UMAP coordinates
 # Number of clusters for K-means
-n_clusters = 8 # You can adjust this parameter to get desired number of clusters
+n_clusters = 20 # You can adjust this parameter to get desired number of clusters
 
 # Perform K-means clustering on UMAP coordinates
 kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
@@ -407,7 +313,6 @@ def plot_top_features(cluster_feature_matrix, significant_features_df, top_n=10)
 if len(significant_features_df) > 0:
     plot_top_features(cluster_feature_matrix, significant_features_df)
 
-# ADD NEW CODE BLOCK #3 HERE - Calculate Within-Cluster Similarity
 # Calculate average similarity within each cluster
 within_cluster_similarity = {}
 for cluster_id in cluster_feature_matrix['cluster'].unique():
@@ -436,7 +341,7 @@ similarity_df = pd.DataFrame.from_dict(within_cluster_similarity,
                                       columns=['Average_Similarity'])
 similarity_df.to_csv("Within_cluster_similarity.csv")
 
-# ADD NEW CODE BLOCK #4 HERE - Visualize Cluster Profiles
+# Visualize Cluster Profiles
 # Create a heatmap of top terms across clusters
 top_n = 20  # Number of top terms to include (adjust as needed)
 significant_terms = significant_features_df['Feature'].head(top_n).tolist()
@@ -478,7 +383,7 @@ def get_faculty_mesh_terms(faculty_list, raw_data, mesh_term_columns):
     return faculty_mesh_terms, overlapping_terms
 
 # Example Usage (assuming your raw_data and mesh_term_columns are already defined):
-faculty_to_check = ["Bracken, Matthew", "Allison, Steven", "Treseder, Kathleen"]
+faculty_to_check = ['Briscoe, Adriana', 'Emerson, J.J.', 'German, Donovan', 'Hammer, Tobin', 'Martiny, Jennifer', 'Mooney, Kailen', 'Rodriguez Verdugo, Alejandra']
 faculty_mesh_results, common_terms = get_faculty_mesh_terms(faculty_to_check, raw_data, mesh_term_columns)
 
 for faculty, terms in faculty_mesh_results.items():
@@ -488,20 +393,29 @@ print("\nOverlapping MeSH terms:")
 print(common_terms)
 
 # Save outputs
-sig_df_path = "Significant_terms_per_cluster.csv"
-cluster_df_path = "Professors_in_clusters.csv"
-fig_path = "UMAP_professors_clusters.pdf"
+sig_df_path = "significant_terms_per_cluster.csv"
+cluster_df_path = "faculty_in_clusters.csv"
+fig_path = "umap_professors_clusters.pdf"
 
-# Your data manipulation and saving logic (unchanged)
-umap_df_pca = umap_df_pca.join(faculty_names_df, how='left')
-umap_df_pca = umap_df_pca.groupby('cluster')['Faculty_Full_Name'].apply(list).reset_index()
-umap_df_pca.to_csv(cluster_df_path, index=True)
+# Create a new dataframe with faculty names and their cluster assignments
+faculty_clusters_df = pd.DataFrame({
+    'Faculty_Full_Name': raw_data['Faculty_Full_Name'],
+    'Cluster': kmeans.labels_  # Use the kmeans labels directly
+})
 
-# print("significant_features_df:", significant_features_df['Feature'].tolist()) #added tolist()
-# print("adjusted_p_values:", results_df['adjusted_p_values'].tolist()) #added print statement to see adjusted_p_values values.
+# Group by cluster and create lists of faculty
+cluster_faculty = faculty_clusters_df.groupby('Cluster')['Faculty_Full_Name'].apply(list).reset_index()
+cluster_faculty.columns = ['Cluster', 'Faculty']
 
+# Add count of faculty per cluster
+cluster_faculty['Count'] = cluster_faculty['Faculty'].apply(len)
+
+# Save to CSV
+cluster_faculty.to_csv(cluster_df_path, index=False)
+
+# Save significant features
 significant_features_output_df = pd.DataFrame({
-    'Feature': significant_features_df['Feature'].tolist(),  # Extract the 'Feature' column as a list
-    'P-Value Adjusted': results_df['adjusted_p_values'].tolist()[:len(significant_features_df)] #use results_df, and slice to the correct length.
+    'Feature': significant_features_df['Feature'].tolist(),
+    'P-Value_Adjusted': results_df['adjusted_p_values'].tolist()[:len(significant_features_df)]
 })
 significant_features_output_df.to_csv(sig_df_path, index=True)

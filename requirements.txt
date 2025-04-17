@@ -10,3 +10,4 @@ seaborn
 kaleido
 openpyxl
 biopython
+networkx

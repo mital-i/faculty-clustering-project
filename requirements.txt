@@ -11,3 +11,5 @@ kaleido
 openpyxl
 biopython
 networkx
+leidenalg
+igraph

@@ -4,16 +4,12 @@ import pandas as pd
 from Bio import Entrez
 from collections import Counter
 import re
-import ssl
 import time
 
-# Disable SSL verification
-#ssl._create_default_https_context = ssl._create_unverified_context
-
 # Load dataframes
-faculty_df = pd.read_excel('BioSci_Faculty.xlsx', sheet_name='minus_teaching')
-research_keywords_df = pd.read_excel('Research_Keywords.xlsx')
-faculty_proposal_mesh_terms_df = pd.read_excel('Faculty_Proposal_Abstracts.xlsx', sheet_name='proposal_abstracts_sheet')
+faculty_df = pd.read_excel('biosci_faculty.xlsx', sheet_name='minus_teaching')
+research_keywords_df = pd.read_excel('research_keywords.xlsx')
+faculty_proposal_mesh_terms_df = pd.read_excel('faculty_proposal_abstracts.xlsx', sheet_name='proposal_abstracts_sheet')
 mapped_mesh_terms_df = pd.read_excel('research_keywords_cleaned_mesh_terms.xlsx', usecols=['Faculty_Full_Name', 'Mapped_Mesh_Terms'])
 
 # Set Entrez email
@@ -23,7 +19,7 @@ Entrez.email = "sarkisj@uci.edu"
 faculty_df["pmids"] = None
 for index, row in faculty_df.iterrows():
     search_term = row["Faculty_Author_Affiliation"]
-    handle_search = Entrez.esearch(db="pubmed", mindate="2022", maxdate="2025", term=search_term)
+    handle_search = Entrez.esearch(db="pubmed", mindate="2020", maxdate="2025", term=search_term)
     record = Entrez.read(handle_search)
     faculty_df.at[index, "pmids"] = record["IdList"]
     handle_search.close()
@@ -101,19 +97,14 @@ combined_faculty_df['Combined_Mesh_Terms'] = combined_faculty_df.apply(combine_m
 # Drop original columns if needed
 combined_faculty_df.drop(columns=['Proposal_Mesh_Terms', 'Mapped_Mesh_Terms', 'pmids', 'pub_mesh_terms'], inplace=True)
 
-""" # Combine MeSH terms
-combined_faculty_df['Proposal_Mesh_Terms'].fillna('', inplace=True)
-combined_faculty_df['Mapped_Mesh_Terms'].fillna('', inplace=True)
-combined_faculty_df['Combined_Mesh_Terms'] = combined_faculty_df['Proposal_Mesh_Terms'] + '; ' + combined_faculty_df['Mapped_Mesh_Terms']
-combined_faculty_df['Combined_Mesh_Terms'] = combined_faculty_df['Combined_Mesh_Terms'].str.strip('; ')
-combined_faculty_df.drop(columns=['Proposal_Mesh_Terms', 'Mapped_Mesh_Terms', 'pmids'], inplace=True) """
-
 # Remove unhelpful MeSH terms
 remove_terms = [
     "Animals", "Biology", "Humans", "Rats", "Mice", "Male", "Female",
     "Disease Models, Animal", "Mice, Transgenic", "Mice, Inbred C57BL",
     "Mice, Knockout", "Adult", "Middle Aged", "Models, Theoretical",
-    "Models, Biological", "Models, Animal"
+    "Models, Biological", "Models, Animal", "Mentors", "Mentoring",
+    "Universities", "Drosophila", "Mammals", "Faculty", "Research Design",
+    "Follow-Up Studies", "United States", "Goals", "Preliminary Data", "Students", "Feedback"
 ]
 
 def remove_terms_from_string(terms_string, terms_to_remove):
@@ -171,7 +162,7 @@ def calculate_top_mesh_terms(faculty_mesh_terms_dict):
     for faculty, mesh_terms in faculty_mesh_terms_dict.items():
         if mesh_terms:
             term_counts = Counter(mesh_terms)
-            top_terms = term_counts.most_common(3)
+            top_terms = term_counts.most_common(5)
             print(f"{faculty}: ", end="")
             for i, (term, count) in enumerate(top_terms):
                 print(f"{term}", end="")
@@ -183,7 +174,6 @@ combined_faculty_df['Mesh_Terms_List'] = combined_faculty_df['Combined_Mesh_Term
 combined_faculty_df['Mesh_Terms_List'] = combined_faculty_df['Mesh_Terms_List'].apply(lambda x: [item.strip() for item in x] if isinstance(x, list) else [])
 
 # Create a dictionary with Faculty_Full_Name as keys and Mesh_Terms_List as values
-
 faculty_mesh_terms_dict = dict(zip(combined_faculty_df['Faculty_Full_Name'], combined_faculty_df['Mesh_Terms_List']))
 calculate_top_mesh_terms(faculty_mesh_terms_dict)
 
@@ -201,7 +191,7 @@ unique_mesh_terms = get_unique_terms(combined_faculty_df)
 
 # Create and save DataFrame of unique terms
 unique_terms_df = pd.DataFrame(list(unique_mesh_terms.items()), columns=['Faculty', 'Unique_Mesh_Terms'])
-unique_terms_df.to_excel('faculty_corresponding_unique_terms.xlsx', index=False)
+unique_terms_df.to_excel('faculty_unique_mesh_terms.xlsx', index=False)
 
 # Convert 'Normalized_Scores' dictionary column to separate columns
 normalized_scores_df = combined_faculty_df['Normalized_Scores'].apply(pd.Series)

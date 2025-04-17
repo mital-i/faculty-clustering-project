@@ -25,7 +25,7 @@ from sklearn.preprocessing import StandardScaler
 
 config = {
     'file_path': 'mesh_terms_matrix_5yrs_and_keywords.xlsx',
-    #'pca_components_to_try': range(1, 7),
+    'pca_components_to_try': range(1, 7),
     #'final_pca_components': 5,
     'dbscan_eps': 0.05,
     'dbscan_min_samples': 2,
@@ -49,6 +49,11 @@ def load_and_preprocess_data(file_path, index_col='Faculty_Full_Name'):
     raw_data.columns = raw_data.columns.str.replace(' ', '_').str.replace('-', '_').str.replace(',', '_')
     feature_matrix.columns = feature_matrix.columns.str.replace(' ', '_').str.replace('-', '_').str.replace(',', '_')
     return raw_data, feature_matrix, faculty_names_df
+
+def format_mesh_terms(mesh_terms):
+    if isinstance(mesh_terms, list) and len(mesh_terms) > 0 and isinstance(mesh_terms[0], list):
+        mesh_terms = mesh_terms[0]
+    return ', '.join([term.replace('_', ' ') for term in mesh_terms[:5] if isinstance(term, str)])
 
 def fig_show(fig):
     fig.update_layout(plot_bgcolor='#255799')
@@ -101,6 +106,10 @@ pca_embeddings_df = pca_embeddings_df.merge(top_mesh_terms_df, on='Faculty_Full_
 fig = px.scatter(pca_embeddings_df, x='PC1', y='PC2', hover_name='Faculty_Full_Name',
                  hover_data={'PC1': False, 'PC2': False,
                              'Top_Mesh_Terms': True})
+fig.update_traces(
+    hovertemplate='<b>%{hovertext}</b><br><br>Top Keywords: %{customdata}<extra></extra>',
+    customdata=pca_embeddings_df['Top_Mesh_Terms'].apply(format_mesh_terms)
+)
 fig.show()
 
 # Set up UMAP
@@ -116,6 +125,10 @@ fig = px.scatter(umap_embeddings_df, x="V1", y="V2", title="UMAP", hover_name="F
                  hover_data={"V1": False, "V2": False,
                              'Top_Mesh_Terms': True},
                  width=800, height=800, color_discrete_sequence=['#fecc07'])
+fig.update_traces(
+    hovertemplate='<b>%{hovertext}</b><br><br>Top Keywords: %{customdata}<extra></extra>',
+    customdata=umap_embeddings_df['Top_Mesh_Terms'].apply(format_mesh_terms)
+)
 fig_show(fig)
 
 # Run an elbow plot
@@ -150,6 +163,10 @@ fig = px.scatter(umap_df_pca, x="V1", y="V2", title="UMAP on PCA Components", ho
                  hover_data={"V1": False, "V2": False,
                              'Top_Mesh_Terms': True},
                  width=800, height=800, color_discrete_sequence=['#fecc07'])
+fig.update_traces(
+    hovertemplate='<b>%{hovertext}</b><br><br>Top Keywords: %{customdata}<extra></extra>',
+    customdata=umap_df_pca['Top_Mesh_Terms'].apply(format_mesh_terms)
+)
 fig_show(fig)
 
 # Run UMAPs by iterating through different number of PCA components
@@ -159,11 +176,14 @@ for num_components in config['pca_components_to_try']:
     umap_df_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
     umap_df_pca['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
     umap_df_pca = umap_df_pca.merge(top_mesh_terms_df, on='Faculty_Full_Name', how='left')
-    fig = px.scatter(umap_df_pca, x="V1", y="V2", title=f"UMAP with {num_components} PCA Components",
-                     hover_name="Faculty_Full_Name",
-                     hover_data={"V1": False, "V2": False,
-                                 'Top_Mesh_Terms': True},
-                     width=800, height=800, color_discrete_sequence=['#fecc07'])
+    fig = px.scatter(umap_df_pca, x="V1", y="V2", title="UMAP on PCA Components", hover_name="Faculty_Full_Name",
+                    hover_data={"V1": False, "V2": False,
+                                'Top_Mesh_Terms': True},
+                    width=800, height=800, color_discrete_sequence=['#fecc07'])
+    fig.update_traces(
+        hovertemplate='<b>%{hovertext}</b><br><br>Top Keywords: %{customdata}<extra></extra>',
+        customdata=umap_df_pca['Top_Mesh_Terms'].apply(format_mesh_terms)
+    )
     fig_show(fig)
 
 # Update the number of components after iteration and looking at the elbow plot. This update will be used for the rest of the analysis.
@@ -219,13 +239,17 @@ fig = px.scatter(
     y="V2",
     title="UMAP with Leiden Clustering",
     color="leiden_cluster",
-    color_discrete_sequence=px.colors.qualitative.Bold,  # Use a discrete color palette
-    category_orders={"leiden_cluster": sorted(umap_df_pca["leiden_cluster"].unique())},  # Order the categories
+    color_discrete_sequence=px.colors.qualitative.Bold,
+    category_orders={"leiden_cluster": sorted(umap_df_pca["leiden_cluster"].unique())},
     hover_name="Faculty_Full_Name",
     hover_data={"V1": False, "V2": False,
                 'Top_Mesh_Terms': True},
     width=800,
     height=800
+)
+fig.update_traces(
+    hovertemplate='<b>%{hovertext}</b><br><br>Top Keywords: %{customdata}<extra></extra>',
+    customdata=umap_df_pca['Top_Mesh_Terms'].apply(format_mesh_terms)
 )
 fig_show(fig)
 
@@ -268,15 +292,19 @@ fig = px.scatter(
     umap_df_pca,
     x="V1",
     y="V2",
-    title=f"UMAP with Leiden Clustering (resolution={resolution_parameter}, clusters={num_clusters})",
+    title="UMAP with Leiden Clustering",
     color="leiden_cluster",
-    color_discrete_sequence=px.colors.qualitative.Bold,  # Use a discrete color palette
-    category_orders={"leiden_cluster": sorted(umap_df_pca["leiden_cluster"].unique())},  # Order the categories
+    color_discrete_sequence=px.colors.qualitative.Bold,
+    category_orders={"leiden_cluster": sorted(umap_df_pca["leiden_cluster"].unique())},
     hover_name="Faculty_Full_Name",
     hover_data={"V1": False, "V2": False,
                 'Top_Mesh_Terms': True},
     width=800,
     height=800
+)
+fig.update_traces(
+    hovertemplate='<b>%{hovertext}</b><br><br>Top Keywords: %{customdata}<extra></extra>',
+    customdata=umap_df_pca['Top_Mesh_Terms'].apply(format_mesh_terms)
 )
 fig_show(fig)
 
@@ -335,7 +363,11 @@ fig = px.scatter(
     hover_data={"V1": False, "V2": False, 'Top_Mesh_Terms': True},
     width=800,
     height=800,
-    color_discrete_sequence=px.colors.qualitative.Bold  # Use a discrete color palette
+    color_discrete_sequence=px.colors.qualitative.Bold
+)
+fig.update_traces(
+    hovertemplate='<b>%{hovertext}</b><br><br>Top Keywords: %{customdata}<extra></extra>',
+    customdata=umap_df_pca['Top_Mesh_Terms'].apply(format_mesh_terms)
 )
 fig_show(fig)
 

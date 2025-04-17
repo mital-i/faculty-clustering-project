@@ -50,11 +50,6 @@ def load_and_preprocess_data(file_path, index_col='Faculty_Full_Name'):
     feature_matrix.columns = feature_matrix.columns.str.replace(' ', '_').str.replace('-', '_').str.replace(',', '_')
     return raw_data, feature_matrix, faculty_names_df
 
-def format_mesh_terms(mesh_terms):
-    if isinstance(mesh_terms, list) and len(mesh_terms) > 0 and isinstance(mesh_terms[0], list):
-        mesh_terms = mesh_terms[0]
-    return ', '.join([term.replace('_', ' ') for term in mesh_terms[:5] if isinstance(term, str)])
-
 def fig_show(fig):
     fig.update_layout(plot_bgcolor='#255799')
     fig.update_xaxes(title_text="")
@@ -107,10 +102,6 @@ pca_embeddings_df = pca_embeddings_df.merge(top_mesh_terms_df, on='Faculty_Full_
 fig = px.scatter(pca_embeddings_df, x='PC1', y='PC2', hover_name='Faculty_Full_Name',
                  hover_data={'PC1': False, 'PC2': False,
                              'Top_Mesh_Terms': True})
-fig.update_traces(
-    hovertemplate='<b>%{hovertext}</b><br><br>Top Keywords: %{customdata}<extra></extra>',
-    customdata=pca_embeddings_df['Top_Mesh_Terms'].apply(format_mesh_terms)
-)
 fig.show()
 
 # Set up UMAP
@@ -126,10 +117,6 @@ fig = px.scatter(umap_embeddings_df, x="V1", y="V2", title="UMAP", hover_name="F
                  hover_data={"V1": False, "V2": False,
                              'Top_Mesh_Terms': True},
                  width=800, height=800, color_discrete_sequence=['#fecc07'])
-fig.update_traces(
-    hovertemplate='<b>%{hovertext}</b><br><br>Top Keywords: %{customdata}<extra></extra>',
-    customdata=umap_embeddings_df['Top_Mesh_Terms'].apply(format_mesh_terms)
-)
 fig_show(fig)
 
 # Run an elbow plot
@@ -164,10 +151,6 @@ fig = px.scatter(umap_df_pca, x="V1", y="V2", title="UMAP on PCA Components", ho
                  hover_data={"V1": False, "V2": False,
                              'Top_Mesh_Terms': True},
                  width=800, height=800, color_discrete_sequence=['#fecc07'])
-fig.update_traces(
-    hovertemplate='<b>%{hovertext}</b><br><br>Top Keywords: %{customdata}<extra></extra>',
-    customdata=umap_df_pca['Top_Mesh_Terms'].apply(format_mesh_terms)
-)
 fig_show(fig)
 
 # Run UMAPs by iterating through different number of PCA components
@@ -177,14 +160,11 @@ for num_components in config['pca_components_to_try']:
     umap_df_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
     umap_df_pca['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
     umap_df_pca = umap_df_pca.merge(top_mesh_terms_df, on='Faculty_Full_Name', how='left')
-    fig = px.scatter(umap_df_pca, x="V1", y="V2", title="UMAP on PCA Components", hover_name="Faculty_Full_Name",
-                    hover_data={"V1": False, "V2": False,
-                                'Top_Mesh_Terms': True},
-                    width=800, height=800, color_discrete_sequence=['#fecc07'])
-    fig.update_traces(
-        hovertemplate='<b>%{hovertext}</b><br><br>Top Keywords: %{customdata}<extra></extra>',
-        customdata=umap_df_pca['Top_Mesh_Terms'].apply(format_mesh_terms)
-    )
+    fig = px.scatter(umap_df_pca, x="V1", y="V2", title=f"UMAP with {num_components} PCA Components",
+                     hover_name="Faculty_Full_Name",
+                     hover_data={"V1": False, "V2": False,
+                                 'Top_Mesh_Terms': True},
+                     width=800, height=800, color_discrete_sequence=['#fecc07'])
     fig_show(fig)
 
 # Update the number of components after iteration and looking at the elbow plot. This update will be used for the rest of the analysis.
@@ -203,103 +183,7 @@ dbscan_model = DBSCAN(eps=0.05, min_samples=2).fit(pca_reduced_features)
 umap_df_pca['cluster'] = dbscan_model.labels_
 umap_df_pca['Faculty_Full_Name'] = raw_data['Faculty_Full_Name'] # Add faculty names back to dataframe
 
-# This section runs two different clustering methods: Leiden and K-means. The first one is on the PCA scores, and the second one is on the UMAP coordinates. However, the Leiden clustering is not working as well as K-means right now. K-mean is fine to use for the final analysis.
-
-### Leiden clustering on PCA scores
-# Create a graph from the KNN results
-graph = nx.Graph()
-for i in range(len(pca_reduced_features)):
-    for j in indices[i]:
-        if i != j:  # Avoid self-loops
-            graph.add_edge(i, j)
-
-# Convert NetworkX graph to igraph for Leiden algorithm
-g_ig = ig.Graph.from_networkx(graph)
-
-# Set resolution parameter (higher values = more clusters)
-resolution_parameter = 0.2  # You can adjust this value to get desired number of clusters**
-
-# Run Leiden clustering with resolution parameter
-partition = la.find_partition(
-    g_ig, 
-    la.CPMVertexPartition, 
-    resolution_parameter=resolution_parameter
-)
-
-# Add Leiden cluster assignments to the dataframe
-umap_df_pca['leiden_cluster'] = [membership for membership in partition.membership]
-
-# Print the number of clusters found
-num_clusters = len(set(partition.membership))
-# print(f"Number of clusters found: {num_clusters}")
-
-# Visualize UMAP with Leiden clusters
-fig = px.scatter(
-    umap_df_pca,
-    x="V1",
-    y="V2",
-    title="UMAP with Leiden Clustering",
-    color="leiden_cluster",
-    color_discrete_sequence=px.colors.qualitative.Bold,  # Use a discrete color palette
-    category_orders={"leiden_cluster": sorted(umap_df_pca["leiden_cluster"].unique())},  # Order the categories
-    hover_name="Faculty_Full_Name",
-    hover_data={"V1": False, "V2": False,
-                'Top_Mesh_Terms': True},
-    width=800,
-    height=800
-)
-fig_show(fig)
-
-### Leiden clustering on UMAP coordinates
-# Create a k-nearest neighbors graph from UMAP coordinates instead of PCA scores
-k = 100  # You can adjust this parameter
-knn = NearestNeighbors(n_neighbors=k)
-knn.fit(umap_result)  # Using UMAP coordinates instead of PCA scores
-distances, indices = knn.kneighbors(umap_result)
-
-# Create a graph from the KNN results
-graph = nx.Graph()
-for i in range(len(umap_result)):
-    for j in indices[i]:
-        if i != j:  # Avoid self-loops
-            graph.add_edge(i, j)
-
-# Convert NetworkX graph to igraph for Leiden algorithm
-g_ig = ig.Graph.from_networkx(graph)
-
-# Set resolution parameter (higher values = more clusters)
-resolution_parameter = 0.8  # You can adjust this value to get desired number of clusters
-
-# Run Leiden clustering with resolution parameter
-partition = la.find_partition(
-    g_ig, 
-    la.CPMVertexPartition, 
-    resolution_parameter=resolution_parameter
-)
-
-# Add Leiden cluster assignments to the dataframe
-umap_df_pca['leiden_cluster'] = [membership for membership in partition.membership]
-
-# Print the number of clusters found
-num_clusters = len(set(partition.membership))
-# print(f"Number of clusters found: {num_clusters}")
-
-# Visualize UMAP with Leiden clusters
-fig = px.scatter(
-    umap_df_pca,
-    x="V1",
-    y="V2",
-    title=f"UMAP with Leiden Clustering (resolution={resolution_parameter}, clusters={num_clusters})",
-    color="leiden_cluster",
-    color_discrete_sequence=px.colors.qualitative.Bold,  # Use a discrete color palette
-    category_orders={"leiden_cluster": sorted(umap_df_pca["leiden_cluster"].unique())},  # Order the categories
-    hover_name="Faculty_Full_Name",
-    hover_data={"V1": False, "V2": False,
-                'Top_Mesh_Terms': True},
-    width=800,
-    height=800
-)
-fig_show(fig)
+# This section runs K-means clustering on UMAP coordinates.
 
 # Identify optimal number of clusters using silhouette score
 ## Can go with highest peak but then won't include as many clusters. Can have a rule that I want X number of clusters.
@@ -357,11 +241,7 @@ fig = px.scatter(
     hover_data={"V1": False, "V2": False, 'Top_Mesh_Terms': True},
     width=800,
     height=800,
-    color_discrete_sequence=px.colors.qualitative.Bold
-)
-fig.update_traces(
-    hovertemplate='<b>%{hovertext}</b><br><br>Top Keywords: %{customdata}<extra></extra>',
-    customdata=umap_df_pca['Top_Mesh_Terms'].apply(format_mesh_terms)
+    color_discrete_sequence=px.colors.qualitative.Bold  # Use a discrete color palette
 )
 fig_show(fig)
 

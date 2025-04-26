@@ -13,3 +13,4 @@ biopython
 networkx
 leidenalg
 igraph
+streamlit-plotly-events

@@ -1,3 +1,4 @@
+# Import necessary libraries
 from collections import Counter
 import pandas as pd
 import numpy as np
@@ -23,6 +24,7 @@ import leidenalg as la
 import igraph as ig
 from sklearn.preprocessing import StandardScaler
 
+# Create a configuration dictionary to store parameters
 config = {
     'file_path': 'mesh_terms_matrix_5yrs_and_keywords.xlsx',
     'pca_components_to_try': range(1, 7),
@@ -40,6 +42,7 @@ config = {
     'top_mesh_terms_output_path': 'Top_Mesh_Terms_Per_Professor.csv',
 }
 
+# Create a function to load and preprocess the data
 def load_and_preprocess_data(file_path, index_col='Faculty_Full_Name'):
     """Loads and preprocesses the raw data."""
     raw_data = pd.read_excel(file_path, index_col=index_col)
@@ -50,6 +53,7 @@ def load_and_preprocess_data(file_path, index_col='Faculty_Full_Name'):
     feature_matrix.columns = feature_matrix.columns.str.replace(' ', '_').str.replace('-', '_').str.replace(',', '_')
     return raw_data, feature_matrix, faculty_names_df
 
+# Create a function to format the figures
 def fig_show(fig):
     fig.update_layout(plot_bgcolor='#255799')
     fig.update_xaxes(title_text="")
@@ -168,7 +172,7 @@ for num_components in config['pca_components_to_try']:
     fig_show(fig)
 
 # Update the number of components after iteration and looking at the elbow plot. This update will be used for the rest of the analysis.
-num_components = 1
+num_components = 3
 pca_reduced_features = pca_result[:, :num_components]
 umap_result = UMAP(random_state=123).fit_transform(pca_reduced_features)
 umap_df_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
@@ -383,12 +387,18 @@ def get_faculty_mesh_terms(faculty_list, raw_data, mesh_term_columns):
     return faculty_mesh_terms, overlapping_terms
 
 # Example Usage (assuming your raw_data and mesh_term_columns are already defined):
-faculty_to_check = ['Briscoe, Adriana', 'Emerson, J.J.', 'German, Donovan', 'Hammer, Tobin', 'Martiny, Jennifer', 'Mooney, Kailen', 'Rodriguez Verdugo, Alejandra']
+faculty_to_check = ['Connor, Kwasi', 'Edinger, Aimee', 'Frostig, Ron', 'Goulding, Celia', 'Gross, Steven', 'Morrissette, Naomi']
 faculty_mesh_results, common_terms = get_faculty_mesh_terms(faculty_to_check, raw_data, mesh_term_columns)
 
-for faculty, terms in faculty_mesh_results.items():
-    print(f"{faculty}: {terms}")
-
+# Create output text file
+with open('faculty_to_check.txt', 'w') as f:
+    for faculty, terms in faculty_mesh_results.items():
+        f.write(f"{faculty}: {terms}\n")
+        print(f"{faculty}: {terms}")
+    
+    f.write("\nOverlapping MeSH terms:\n")
+    f.write(str(common_terms))
+    
 print("\nOverlapping MeSH terms:")
 print(common_terms)
 

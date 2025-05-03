@@ -23,6 +23,9 @@ import leidenalg as la
 import igraph as ig
 from sklearn.preprocessing import StandardScaler
 
+import streamlit as st
+print(st.__version__)
+
 # Configuration
 config = {
     'file_path': 'mesh_terms_matrix_5yrs_and_keywords.xlsx',

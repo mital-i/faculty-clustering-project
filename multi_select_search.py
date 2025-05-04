@@ -72,15 +72,13 @@ def render_mesh_selector(umap_df, mesh_df):
     )
 
     # this both renders the chart & returns click/selection events
-    # events = plotly_events(
-    #     fig,
-    #     click_event=True,
-    #     select_event=True,
-    #     override_height=600,
-    #     override_width="100%",
-    # )
-
-    st.plotly_chart(fig, use_container_width=True)
+    events = plotly_events(
+        fig,
+        click_event=True,
+        select_event=True,
+        override_height=600,
+        override_width="100%",
+    )
 
     # ————————————————————————————————————————————————————————————————
     # 5) Manage manual selections in session_state

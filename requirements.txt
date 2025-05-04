@@ -4,6 +4,8 @@ streamlit
 scikit-learn
 umap-learn
 plotly
+plotly.events
+plotly.express
 statsmodels
 matplotlib
 seaborn

@@ -1,28 +1,21 @@
 import pandas as pd
 import numpy as np
 import streamlit as st
-from sklearn.decomposition import PCA
-import re
-from umap import UMAP
 import plotly.express as px
-import plotly.graph_objects as go
-from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
+from umap import UMAP
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.neighbors import NearestNeighbors
-from sklearn.metrics import silhouette_score
 import matplotlib.pyplot as plt
 import seaborn as sns
 from collections import Counter
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
-from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from statsmodels.stats.multitest import multipletests
-from streamlit_plotly_events import plotly_events
 import networkx as nx
 import leidenalg as la
 import igraph as ig
-from sklearn.preprocessing import StandardScaler
-
+from multi_select_search import render_mesh_selector
 import streamlit as st
 print(st.__version__)
 
@@ -39,10 +32,7 @@ config = {
     'top_mesh_terms_output_path': 'Top_Mesh_Terms_Per_Professor.csv',
 }
 
-color_palette = px.colors.qualitative.Set1
-
 # Helper functions
-
 
 def load_and_preprocess_data(file_path, index_col='Faculty_Full_Name'):
     raw_data = pd.read_excel(file_path, index_col=index_col)
@@ -213,240 +203,13 @@ fig.update_traces(
 )
 st.plotly_chart(fig)
 
-# Add search box
-search_term = st.text_input("Search for faculty name or MeSH term:")
-
-# Create a mask for filtering faculty names and MeSH terms
-if search_term:
-    faculty_mask = umap_df_pca['Faculty_Full_Name'].str.contains(
-        search_term, case=False)
-    mesh_mask = umap_df_pca['Top_Mesh_Terms'].apply(
-        lambda x: any(search_term.lower() in term.lower() for term in x[0]))
-    filtered_df = umap_df_pca[faculty_mask | mesh_mask]
-else:
-    filtered_df = umap_df_pca
-
-# Create a scatter plot with highlighted faculty
-fig = px.scatter(umap_df_pca, x="V1", y="V2", color='cluster',
-                 color_discrete_sequence=color_palette, title=f"UMAP with {clustering_method} Clustering",
-                 hover_name="Faculty_Full_Name", hover_data={"V1": False, "V2": False, 'Top_Mesh_Terms': True},
-                 width=800, height=800)
-
-# Highlight selected faculty in red
-if search_term:
-    for index, row in filtered_df.iterrows():
-        fig.add_trace(go.Scatter(
-            x=[row['V1']],
-            y=[row['V2']],
-            mode='markers',
-            marker=dict(color='red', size=10),
-            name=row['Faculty_Full_Name'],
-            hoverinfo='text',
-            text=f"{row['Faculty_Full_Name']}<br>Top MeSH Terms: {format_mesh_terms(row['Top_Mesh_Terms'])}",
-            showlegend=False
-        ))
-
-# Update hover template to include cluster information
-fig.update_traces(
-    hovertemplate='<b>%{hovertext}</b><br><br>Top Keywords: %{customdata}<extra></extra>',
-    customdata=umap_df_pca['Top_Mesh_Terms'].apply(format_mesh_terms)
-)
-
-# # Display the plot
-# plot_placeholder = st.empty()
-# plot_placeholder.plotly_chart(fig)
-
-# # Handle click events to unselect faculty
-# clicked_point = st.experimental_get_query_params().get('clickData')
-# if clicked_point:
-#     point_data = clicked_point[0]
-#     faculty_name = point_data.get('points', [{}])[0].get('hovertext')
-#     if faculty_name:
-#         search_term = ""  # Clear the search term to unselect
-#         st.experimental_set_query_params()
-
-# # Display selected faculty information
-
-# # Load the Excel file
-# faculty_mesh_terms_df = pd.read_excel("faculty_unique_mesh_terms.xlsx")
-
-# faculty_mesh_terms_df.columns = faculty_mesh_terms_df.columns.str.strip()
-# if "Faculty" in faculty_mesh_terms_df.columns:
-#     faculty_mesh_terms_df.rename(
-#         columns={"Faculty": "Faculty_Full_Name"}, inplace=True
-#     )
-
-# # Normalised key column → always lowercase, single-spaced, trimmed
-# faculty_mesh_terms_df["name_key"] = (
-#     faculty_mesh_terms_df["Faculty_Full_Name"]
-#     .str.replace(r"\s+", " ", regex=True)
-#     .str.strip()
-#     .str.casefold()
-# )
-
-# if search_term:
-#     selected_faculty_info = filtered_df[
-#         filtered_df["Faculty_Full_Name"].str.contains(search_term, case=False)
-#     ]
-
-#     if not selected_faculty_info.empty:
-#         st.sidebar.subheader("Selected Faculty Information")
-
-#         for _, row in selected_faculty_info.iterrows():
-#             prof = row["Faculty_Full_Name"]
-#             prof_key = re.sub(r"\s+", " ", prof).strip().casefold()
-
-#             # Match on the normalised key, not the raw string
-#             full_terms_row = faculty_mesh_terms_df[
-#                 faculty_mesh_terms_df["name_key"] == prof_key
-#             ]
-
-#             if full_terms_row.empty:
-#                 st.sidebar.write(
-#                     f"**{prof}** — no entry in faculty_unique_mesh_terms.xlsx")
-#                 continue
-
-#             mesh_terms = full_terms_row.iloc[0]["Unique_Mesh_Terms"]
-
-#             # Convert "term1; term2" → list if necessary
-#             if isinstance(mesh_terms, str):
-#                 mesh_terms = [t.strip() for t in re.split(
-#                     r"[;,]", mesh_terms) if t.strip()]
-
-#             # ---------- sidebar display ----------
-#             st.sidebar.markdown(f"**{prof}**")
-#             st.sidebar.write(f"Unique MeSH terms ({len(mesh_terms)}):")
-#             st.sidebar.write(", ".join(mesh_terms))
-
-#             # ---------- download button ----------
-#             csv_bytes = (
-#                 pd.DataFrame({"MeSH_Term": mesh_terms})
-#                 .to_csv(index=False)
-#                 .encode("utf-8")
-#             )
-#             st.sidebar.download_button(
-#                 label="Download full MeSH-term list as CSV",
-#                 data=csv_bytes,
-#                 file_name=f"{prof.replace(' ', '_')}_mesh_terms.csv",
-#                 mime="text/csv",
-#             )
-fig.update_traces(
-    # customdata must be 2-D; wrap each name in a list
-    customdata=umap_df_pca["Faculty_Full_Name"].apply(lambda x: [x]).tolist(),
-    hovertemplate='<b>%{customdata[0]}</b><br><br>'
-                  'Top Keywords: %{customdata[1]}<extra></extra>'
-)
-# Note: the 2nd customdata field gets added automatically by the block that
-# formats Top_Mesh_Terms earlier in your script.
-
-# ---------------------------------------------------------------
-# 1) Load the unique-MeSH-term lookup *once*  (place near top)
-# ---------------------------------------------------------------
-faculty_mesh_terms_df = (
-    pd.read_excel("faculty_unique_mesh_terms.xlsx")
-      .rename(columns=lambda c: c.strip())
-)
-if "Faculty" in faculty_mesh_terms_df.columns:
-    faculty_mesh_terms_df.rename(
+mesh_df = pd.read_excel("faculty_unique_mesh_terms.xlsx")\
+            .rename(columns=lambda c: c.strip())
+if "Faculty" in mesh_df.columns:
+    mesh_df.rename(
         columns={"Faculty": "Faculty_Full_Name"}, inplace=True)
 
-# ---------------------------------------------------------------
-# 2) Build a helper column that holds a pretty one-line term list
-# ---------------------------------------------------------------
-faculty_mesh_terms_df["term_string"] = (
-    faculty_mesh_terms_df["Unique_Mesh_Terms"]
-    .apply(lambda x: "; ".join(x) if isinstance(x, list) else str(x))
-)
-
-# ---------------------------------------------------------------
-# 3) Before **any** update_traces() that will feed Plotly-events,
-#    make sure each point carries *both* pieces of info
-# ---------------------------------------------------------------
-tooltip_terms = umap_df_pca["Top_Mesh_Terms"].apply(format_mesh_terms)
-
-fig.update_traces(
-    customdata=np.column_stack(
-        (umap_df_pca["Faculty_Full_Name"], tooltip_terms)
-    ).tolist(),
-    hovertemplate='<b>%{customdata[0]}</b><br><br>'
-                  'Top MeSH terms: %{customdata[1]}<extra></extra>'
-)
-
-
-# --- 2. Plotly events: click OR box/lasso select -----------------------------
-selected_points = plotly_events(
-    fig,
-    click_event=True,    # single clicks add/remove a point
-    select_event=True,   # box/lasso adds all points in selection
-    override_height=800, override_width="100%"
-)
-
-# Keep a running list in st.session_state so multiple interactions accumulate
-if "picked" not in st.session_state:
-    st.session_state.picked = set()
-
-for p in selected_points:
-    if "customdata" in p and p["customdata"]:
-        name_clicked = p["customdata"][0]           # preferred path
-    else:
-        # Fallback: grab the name directly from the dataframe
-        name_clicked = umap_df_pca.iloc[p["pointIndex"]]["Faculty_Full_Name"]
-    if name_clicked in st.session_state.picked:
-        st.session_state.picked.remove(
-            name_clicked)   # second click → unselect
-    else:
-        st.session_state.picked.add(name_clicked)
-
-# Clear-selection button
-if st.session_state.picked:
-    if st.button("Clear all selections"):
-        st.session_state.picked.clear()
-
-# --- 3. Layout: two columns --------------------------------------------------
-info_placeholder = st.container()
-
-with info_placeholder:
-    st.markdown("### Selected Faculty")
-    if st.session_state.picked:
-        # a) Build dataframe with full MeSH terms for each selected name
-        sel_df = faculty_mesh_terms_df[
-            faculty_mesh_terms_df["Faculty_Full_Name"]
-            .str.casefold()
-            .isin([n.casefold() for n in st.session_state.picked])
-        ][["Faculty_Full_Name", "Unique_Mesh_Terms"]].copy()
-
-        # b) Normalise the MeSH-term column into lists
-        def to_list(term_field):
-            if isinstance(term_field, list):
-                return term_field
-            return [t.strip() for t in re.split(r"[;,]", str(term_field)) if t.strip()]
-
-        sel_df["Unique_Mesh_Terms"] = sel_df["Unique_Mesh_Terms"].apply(
-            to_list)
-
-        # c) Display
-        for _, r in sel_df.iterrows():
-            st.write(f"**{r['Faculty_Full_Name']}**  \n"
-                     f"{', '.join(r['Unique_Mesh_Terms'])}")
-
-        # d) Download button – one row per faculty, terms semicolon-joined
-        csv_bytes = (
-            sel_df.assign(
-                Unique_Mesh_Terms=sel_df.Unique_Mesh_Terms.apply("; ".join)
-            )
-            .to_csv(index=False)
-            .encode("utf-8")
-        )
-        st.download_button(
-            "Download selected faculty + MeSH terms",
-            data=csv_bytes,
-            file_name="selected_faculty_mesh_terms.csv",
-            mime="text/csv",
-        )
-    else:
-        st.info("Click or lasso points in the plot to see details here.")
-
-st.plotly_chart(fig, use_container_width=True)
+render_mesh_selector(umap_df_pca, mesh_df)
 
 # ANOVA and feature significance
 st.subheader("Feature Significance Analysis")
@@ -517,8 +280,8 @@ if len(significant_features_df) > 0:
                             significant_features_df, top_n)
     st.pyplot(fig)
 
-# Save outputs
-umap_df_pca.to_csv(config['cluster_output_path'], index=False)
-significant_features_df.to_csv(config['anova_output_path'], index=False)
+# # Save outputs
+# umap_df_pca.to_csv(config['cluster_output_path'], index=False)
+# significant_features_df.to_csv(config['anova_output_path'], index=False)
 
 st.success("Analysis complete! Output files have been saved.")

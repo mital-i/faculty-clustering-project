@@ -132,7 +132,7 @@ def render_mesh_selector(umap_df, mesh_df):
             mime="text/csv",
         )
         st.write("**Faculty included:**", ", ".join(sel))
-        if sel_manual and st.button("Clear manual selections"):
+        if st.button("Clear selections"):
             st.session_state.selected_faculty.clear()
 
     else:

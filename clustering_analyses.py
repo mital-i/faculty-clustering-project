@@ -2,11 +2,10 @@ from collections import Counter
 import pandas as pd
 import numpy as np
 from sklearn.decomposition import PCA
-import umap
-from umap import UMAP
+from umap.umap_ import UMAP
 import plotly.express as px
-import plotly.graph_objects as go
-from sklearn.manifold import TSNE
+# import plotly.graph_objects as go
+# from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.neighbors import NearestNeighbors
 from sklearn.metrics import silhouette_score
@@ -14,13 +13,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
-from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from statsmodels.stats.multitest import multipletests
-import os
-import kaleido
-import networkx as nx
-import leidenalg as la
-import igraph as ig
 from sklearn.preprocessing import StandardScaler
 
 config = {
@@ -339,7 +332,7 @@ for cluster_id in cluster_feature_matrix['cluster'].unique():
 similarity_df = pd.DataFrame.from_dict(within_cluster_similarity, 
                                       orient='index', 
                                       columns=['Average_Similarity'])
-similarity_df.to_csv("Within_cluster_similarity.csv")
+# similarity_df.to_csv("Within_cluster_similarity.csv") # UNCOMMENT IF YOU WANT TO SPIT IT OUT
 
 # Visualize Cluster Profiles
 # Create a heatmap of top terms across clusters

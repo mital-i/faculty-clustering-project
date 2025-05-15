@@ -3,7 +3,7 @@ import numpy as np
 import streamlit as st
 import plotly.express as px
 from sklearn.decomposition import PCA
-from umap import UMAP
+from umap.umap_ import UMAP
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.neighbors import NearestNeighbors
 import matplotlib.pyplot as plt
@@ -16,8 +16,8 @@ import networkx as nx
 import leidenalg as la
 import igraph as ig
 from multi_select_search import render_mesh_selector
+from sklearn.preprocessing import StandardScaler
 import streamlit as st
-print(st.__version__)
 
 # Configuration
 config = {
@@ -33,6 +33,7 @@ config = {
 }
 
 # Helper functions
+
 
 def load_and_preprocess_data(file_path, index_col='Faculty_Full_Name'):
     raw_data = pd.read_excel(file_path, index_col=index_col)
@@ -163,7 +164,7 @@ clustering_method = st.selectbox("Select clustering method", [
 
 if clustering_method == "K-means":
     n_clusters = st.slider("Number of clusters",
-                           min_value=2, max_value=20, value=8)
+                           min_value=2, max_value=30, value=8)  # TODO: CHANGE THIS LATER
     kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
     cluster_labels = kmeans.fit_predict(umap_result)
     # Ensure cluster labels are assigned here
@@ -282,6 +283,6 @@ if len(significant_features_df) > 0:
 
 # # Save outputs
 # umap_df_pca.to_csv(config['cluster_output_path'], index=False)
-# significant_features_df.to_csv(config['anova_output_path'], index=False)
+# significant_features_df.to_csv(config['anova_output_path'], index=False) # UNCOMMENT
 
 st.success("Analysis complete! Output files have been saved.")

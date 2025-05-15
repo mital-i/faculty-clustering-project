@@ -12,18 +12,17 @@ research_keywords_df = pd.read_excel('research_keywords.xlsx')
 faculty_proposal_mesh_terms_df = pd.read_excel('faculty_proposal_abstracts.xlsx', sheet_name='proposal_abstracts_sheet')
 mapped_mesh_terms_df = pd.read_excel('research_keywords_cleaned_mesh_terms.xlsx', usecols=['Faculty_Full_Name', 'Mapped_Mesh_Terms'])
 
+# Collect MeSH terms from publications
 # Set Entrez email
 Entrez.email = "sarkisj@uci.edu"
-
 # Fetch PMIDs for each faculty member
 faculty_df["pmids"] = None
 for index, row in faculty_df.iterrows():
     search_term = row["Faculty_Author_Affiliation"]
-    handle_search = Entrez.esearch(db="pubmed", mindate="2020", maxdate="2025", term=search_term)
+    handle_search = Entrez.esearch(db="pubmed", mindate="2022", maxdate="2025", term=search_term)
     record = Entrez.read(handle_search)
     faculty_df.at[index, "pmids"] = record["IdList"]
     handle_search.close()
-
 # Fetch MeSH terms for each PMID
 faculty_df['pub_mesh_terms'] = None
 for index, row in faculty_df.iterrows():
@@ -42,44 +41,42 @@ for index, row in faculty_df.iterrows():
                     mesh_term_texts.append(descriptor_name)
         handle_mesh.close()
         time.sleep(0.5)
-
     faculty_df.at[index, 'pub_mesh_terms'] = '; '.join(mesh_term_texts)
-
+# Save the updated DataFrame to a CSV file
 output_file = 'faculty_pulled_mesh_terms.csv'
 faculty_df.to_csv(output_file, index=False)
-
+# Load the saved CSV file as faculty_df
 output_file = 'faculty_pulled_mesh_terms.csv'
 faculty_df = pd.read_csv(output_file)
 
+# Collect MeSH terms from proposal abstracts
 # Process proposal MeSH terms
 faculty_proposal_mesh_terms_df['Proposal_Mesh_Terms'] = faculty_proposal_mesh_terms_df['Proposal_Mesh_Terms'].astype(str)
-
-proposal_mesh_terms_df = faculty_proposal_mesh_terms_df.groupby('Faculty')['Proposal_Mesh_Terms'].agg(lambda x: '; '.join(x)).reset_index()
-
+proposal_mesh_terms_df = faculty_proposal_mesh_terms_df.groupby('Faculty_Full_Name')['Proposal_Mesh_Terms'].agg(lambda x: '; '.join(x)).reset_index()
 def repeat_mesh_terms(mesh_terms, repetitions):
     if pd.notna(mesh_terms) and mesh_terms != "":
         repeated_terms = "; ".join([str(mesh_terms)] * repetitions)
         return repeated_terms
     return mesh_terms
 
+# Weight MeSH terms
 # Apply doubling
 mapped_mesh_terms_df['Mapped_Mesh_Terms'] = mapped_mesh_terms_df['Mapped_Mesh_Terms'].apply(lambda x: repeat_mesh_terms(x, 2))
-
 # Apply tripling
 proposal_mesh_terms_df['Proposal_Mesh_Terms'] = proposal_mesh_terms_df['Proposal_Mesh_Terms'].apply(lambda x: repeat_mesh_terms(x, 3))
 
 # Merge dataframes
-merged_df = pd.merge(faculty_df, proposal_mesh_terms_df, on='Faculty', how='left')
-merged_df.drop(columns=['Faculty_Author', 'Faculty_Author_Affiliation'], inplace=True)
+merged_df = pd.merge(faculty_df, proposal_mesh_terms_df, on='Faculty_Full_Name', how='left')
+merged_df.drop(columns=['Faculty', 'Faculty_Author', 'Faculty_Author_Affiliation'], inplace=True)
 combined_faculty_df = pd.merge(merged_df, mapped_mesh_terms_df, on="Faculty_Full_Name", how='left')
 
-# Combine MeSH terms - corrected version
+# Combine MeSH terms
 # First, replace NaN values with empty strings
 combined_faculty_df['Proposal_Mesh_Terms'] = combined_faculty_df['Proposal_Mesh_Terms'].fillna('')
 combined_faculty_df['Mapped_Mesh_Terms'] = combined_faculty_df['Mapped_Mesh_Terms'].fillna('')
 combined_faculty_df['pub_mesh_terms'] = combined_faculty_df['pub_mesh_terms'].fillna('')
 
-# Create a function to combine terms properly
+# Create a function to combine terms
 def combine_mesh_terms(row):
     terms = []
     if row['Proposal_Mesh_Terms'] and row['Proposal_Mesh_Terms'].strip():
@@ -88,7 +85,6 @@ def combine_mesh_terms(row):
         terms.append(row['Mapped_Mesh_Terms'])
     if row['pub_mesh_terms'] and row['pub_mesh_terms'].strip():
         terms.append(row['pub_mesh_terms'])
-    
     return '; '.join(terms)
 
 # Apply the function to create the combined column
@@ -180,7 +176,7 @@ calculate_top_mesh_terms(faculty_mesh_terms_dict)
 def get_unique_terms(combined_faculty_df):
     unique_terms = {}
     for index, row in combined_faculty_df.iterrows():
-        faculty_name, terms = row['Faculty'], row['Combined_Mesh_Terms']
+        faculty_name, terms = row['Faculty_Full_Name'], row['Combined_Mesh_Terms']
         terms_list = [term.strip() for term in terms.split(';')]
         unique_terms[faculty_name] = "; ".join(sorted(set(terms_list)))  # Sort for consistency
 
@@ -190,7 +186,7 @@ def get_unique_terms(combined_faculty_df):
 unique_mesh_terms = get_unique_terms(combined_faculty_df)
 
 # Create and save DataFrame of unique terms
-unique_terms_df = pd.DataFrame(list(unique_mesh_terms.items()), columns=['Faculty', 'Unique_Mesh_Terms'])
+unique_terms_df = pd.DataFrame(list(unique_mesh_terms.items()), columns=['Faculty_Full_Name', 'Unique_Mesh_Terms'])
 unique_terms_df.to_excel('faculty_unique_mesh_terms.xlsx', index=False)
 
 # Convert 'Normalized_Scores' dictionary column to separate columns

@@ -1,0 +1,9 @@
+Connor, Kwasi: ['Normalized_Homeostasis', 'Normalized_Temperature', 'Normalized_Diet']
+Edinger, Aimee: ['Normalized_Tumor_Microenvironment', 'Normalized_Cell_Proliferation', 'Normalized_Nutrients', 'Normalized_Mitochondria', 'Normalized_Obesity', 'Normalized_Alleles', 'Normalized_Cell_Line__Tumor', 'Normalized_CRISPR_Cas_Systems', 'Normalized_Ligands', 'Normalized_COVID_19']
+Frostig, Ron: ['Normalized_Magnetic_Resonance_Imaging', 'Normalized_Astrocytes', 'Normalized_Neuroimaging', 'Normalized_Neuronal_Plasticity']
+Goulding, Celia: ['Normalized_Anti_Bacterial_Agents', 'Normalized_Nutrients', 'Normalized_Escherichia_coli', 'Normalized_Molecular_Biology', 'Normalized_Ligands', 'Normalized_Pandemics', 'Normalized_Cryoelectron_Microscopy']
+Gross, Steven: ['Normalized_Neurodegenerative_Diseases', 'Normalized_Anti_Bacterial_Agents', 'Normalized_Computational_Biology', 'Normalized_DNA', 'Normalized_Computer_Simulation', 'Normalized_Anti_Infective_Agents']
+Morrissette, Naomi: ['Normalized_Parasites', 'Normalized_Toxoplasma', 'Normalized_Fibroblasts', 'Normalized_Ligands']
+
+Overlapping MeSH terms:
+set()

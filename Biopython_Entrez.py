@@ -13,9 +13,9 @@ faculty_proposal_mesh_terms_df = pd.read_excel('faculty_proposal_abstracts.xlsx'
 mapped_mesh_terms_df = pd.read_excel('research_keywords_cleaned_mesh_terms.xlsx', usecols=['Faculty_Full_Name', 'Mapped_Mesh_Terms'])
 
 # Collect MeSH terms from publications
-# Set Entrez email
+
+## Fetch PMIDs for each faculty member
 Entrez.email = "sarkisj@uci.edu"
-# Fetch PMIDs for each faculty member
 faculty_df["pmids"] = None
 for index, row in faculty_df.iterrows():
     search_term = row["Faculty_Author_Affiliation"]
@@ -23,7 +23,9 @@ for index, row in faculty_df.iterrows():
     record = Entrez.read(handle_search)
     faculty_df.at[index, "pmids"] = record["IdList"]
     handle_search.close()
-# Fetch MeSH terms for each PMID
+
+## Fetch MeSH terms for each PMID
+Entrez.email = "sarkisj@uci.edu"
 faculty_df['pub_mesh_terms'] = None
 for index, row in faculty_df.iterrows():
     pmid_list = row['pmids'] 
@@ -40,12 +42,14 @@ for index, row in faculty_df.iterrows():
                     descriptor_name = str(descriptor_name_element)  # Convert StringElement to string
                     mesh_term_texts.append(descriptor_name)
         handle_mesh.close()
-        time.sleep(0.5)
+        #time.sleep(0.5)
     faculty_df.at[index, 'pub_mesh_terms'] = '; '.join(mesh_term_texts)
-# Save the updated DataFrame to a CSV file
+
+## Save the updated DataFrame to a CSV file
 output_file = 'faculty_pulled_mesh_terms.csv'
 faculty_df.to_csv(output_file, index=False)
-# Load the saved CSV file as faculty_df
+
+## Load the saved CSV file as faculty_df
 output_file = 'faculty_pulled_mesh_terms.csv'
 faculty_df = pd.read_csv(output_file)
 
@@ -67,7 +71,7 @@ proposal_mesh_terms_df['Proposal_Mesh_Terms'] = proposal_mesh_terms_df['Proposal
 
 # Merge dataframes
 merged_df = pd.merge(faculty_df, proposal_mesh_terms_df, on='Faculty_Full_Name', how='left')
-merged_df.drop(columns=['Faculty', 'Faculty_Author', 'Faculty_Author_Affiliation'], inplace=True)
+merged_df.drop(columns=['Faculty_Author_Affiliation'], inplace=True)
 combined_faculty_df = pd.merge(merged_df, mapped_mesh_terms_df, on="Faculty_Full_Name", how='left')
 
 # Combine MeSH terms
@@ -200,6 +204,9 @@ normalized_scores_df.index = combined_faculty_df.index
 
 # Concatenate normalized scores to original DataFrame
 combined_faculty_df = pd.concat([combined_faculty_df, normalized_scores_df], axis=1)
+
+# Remove "Normalized_" prefix from column names
+combined_faculty_df.columns = combined_faculty_df.columns.str.replace('Normalized_', '', regex=False)
 
 # Save the updated DataFrame to Excel
 combined_faculty_df.to_excel('faculty_mesh_terms.xlsx', index=False)

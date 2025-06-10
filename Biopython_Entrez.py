@@ -6,27 +6,31 @@ from collections import Counter
 import re
 import time
 
-# Load dataframes
+# Load DataFrames from Excel files
 faculty_df = pd.read_excel('biosci_faculty.xlsx', sheet_name='minus_teaching')
 research_keywords_df = pd.read_excel('research_keywords.xlsx')
 faculty_proposal_mesh_terms_df = pd.read_excel('faculty_proposal_abstracts.xlsx', sheet_name='proposal_abstracts_sheet')
 mapped_mesh_terms_df = pd.read_excel('research_keywords_cleaned_mesh_terms.xlsx', usecols=['Faculty_Full_Name', 'Mapped_Mesh_Terms'])
 
 # Collect MeSH terms from publications
-
 ## Fetch PMIDs for each faculty member
 Entrez.email = "sarkisj@uci.edu"
-faculty_df["pmids"] = None
+pmid_list = []
+
 for index, row in faculty_df.iterrows():
     search_term = row["Faculty_Author_Affiliation"]
     handle_search = Entrez.esearch(db="pubmed", mindate="2022", maxdate="2025", term=search_term)
     record = Entrez.read(handle_search)
-    faculty_df.at[index, "pmids"] = record["IdList"]
+    pmid_list.append(record["IdList"])
     handle_search.close()
+
+faculty_df["pmids"] = pmid_list
+faculty_df.head(10)
 
 ## Fetch MeSH terms for each PMID
 Entrez.email = "sarkisj@uci.edu"
-faculty_df['pub_mesh_terms'] = None
+all_pub_mesh_terms = []
+
 for index, row in faculty_df.iterrows():
     pmid_list = row['pmids'] 
     mesh_term_texts = []
@@ -39,22 +43,23 @@ for index, row in faculty_df.iterrows():
             for mesh_heading in mesh_headings:
                 descriptor_name_element = mesh_heading.get("DescriptorName")
                 if descriptor_name_element:
-                    descriptor_name = str(descriptor_name_element)  # Convert StringElement to string
+                    descriptor_name = str(descriptor_name_element)
                     mesh_term_texts.append(descriptor_name)
         handle_mesh.close()
-        #time.sleep(0.5)
-    faculty_df.at[index, 'pub_mesh_terms'] = '; '.join(mesh_term_texts)
+    all_pub_mesh_terms.append('; '.join(mesh_term_texts))
 
-## Save the updated DataFrame to a CSV file
-output_file = 'faculty_pulled_mesh_terms.csv'
+faculty_df['pub_mesh_terms'] = all_pub_mesh_terms
+faculty_df.head(10)
+
+## Save the updated DataFrame to a CSV file so that you don't have to run the above code again
+output_file = 'pubmed_mesh_terms.csv'
 faculty_df.to_csv(output_file, index=False)
 
 ## Load the saved CSV file as faculty_df
-output_file = 'faculty_pulled_mesh_terms.csv'
+output_file = 'pubmed_mesh_terms.csv'
 faculty_df = pd.read_csv(output_file)
 
 # Collect MeSH terms from proposal abstracts
-# Process proposal MeSH terms
 faculty_proposal_mesh_terms_df['Proposal_Mesh_Terms'] = faculty_proposal_mesh_terms_df['Proposal_Mesh_Terms'].astype(str)
 proposal_mesh_terms_df = faculty_proposal_mesh_terms_df.groupby('Faculty_Full_Name')['Proposal_Mesh_Terms'].agg(lambda x: '; '.join(x)).reset_index()
 def repeat_mesh_terms(mesh_terms, repetitions):
@@ -219,4 +224,4 @@ pd.options.display.max_rows = None
 pca_matrix = combined_faculty_df.drop(combined_faculty_df.columns[1:36], axis=1)
 
 # Save PCA matrix to Excel
-pca_matrix.to_excel('mesh_terms_matrix_5yrs_and_keywords.xlsx', index=False)
+pca_matrix.to_excel('faculty_mesh_terms_matrix.xlsx', index=False)

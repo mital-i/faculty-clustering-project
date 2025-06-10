@@ -1,21 +1,7 @@
 Cluster,Faculty,Count
-0,"['Busciglio, Jorge', 'Fowler, Christie', 'Halbrook, Christopher', 'Lane, Thomas', 'McNulty, Reginald', 'Tinoco, Roberto']",6
-1,"['Frank, Steven', 'Lee, Grace', 'Long, Anthony', 'Martinez, Christopher', 'Mooney, Kailen', 'Rebolleda-Gomez, Maria', 'Striedter, Georg']",7
-2,"['Cocco, Melanie', 'Edinger, Aimee', 'Fortin, Norbert', 'Goulding, Celia', 'Hughes, Christopher', 'Morrissette, Naomi', 'Nicholas, Dequina', 'Tsai, Shiou-Chuan']",8
-3,"['Arora, Kavita', 'Cinquin, Olivier', 'Luo, Ray', 'Lur, Gyorgy', 'Mahler, Stephen', 'Nie, Qing', 'Warrior, Rahul']",7
-4,"['Bracken, Matthew', 'Eom, Dae Seok', 'Huxman, Travis', 'Lutterschmidt, Deborah', 'Sorte, Cascade', 'Tenner, Andrea']",6
-5,"['Chrastil, Elizabeth', 'Frostig, Ron', 'Glabe, Charles', 'Gonen, Shane', 'Green, Michael', 'McNaughton, Bruce', 'Razorenova, Olga']",7
-6,"['Briscoe, Adriana', 'Gaut, Brandon', 'MacGregor, Grant', 'Parsons, Michael', 'Whiteson, Katrine']",5
-7,"['Faiola, Celia', 'Green, Kim', 'Kvon, Evgeny', 'LaFerla, Frank', 'Lamb, Joleah', 'Symons, Celia', 'Thompson-Peer, Katherine', 'Treseder, Kathleen']",8
-8,"['Baker, Nicholas', 'Burley, Nancy', 'Connor, Kwasi', 'Emerson, J.J.', 'Kim, Seungsoo', 'Konieczny, Piotr', 'Pizzagalli, Diego']",7
-9,"['Azizi, Emanuel', 'Daley, Monica', 'Hu, Yilin', 'McHenry, Matthew', 'Ribbe, Markus']",5
-10,"['Blurton-Jones, Mathew', 'Cohen-Cory, Susana', 'Gershon, Paul', 'Sumikawa, Katumi', 'Thompson, Leslie']",5
-11,"['Donovan, Peter', 'Lara-Gonzalez, Pablo', 'Mortazavi, Ali', 'Suetterlin, Christine', 'Yassa, Michael']",5
-12,"['Cahill, Larry', 'Grill, Joshua', 'Kawas, Claudia', 'Schechtman-Drayman, Eitan', 'Stark, Craig']",5
-13,"['Blumberg, Bruce', 'Gross, Steven']",2
-14,"['Atwood, Scott', 'Drayman, Nir', 'Fruman, David', 'Wood, Marcelo']",4
-15,"['German, Donovan', 'Hammer, Tobin', 'Martiny, Jennifer', 'Ranz, Jose', 'Thornton, Kevin', 'Wiles, Travis', 'Xue, Katherine']",7
-16,"['Bardwell, Lee', 'Kong, Mei', 'Swarup, Vivek', 'Wang, Wenqi']",4
-17,"['Allison, Steven', 'Cramer, Karina', 'Morehouse, Benjamin', 'Rodriguez Verdugo, Alejandra', 'Schilling, Thomas']",5
-18,"['Inlay, Matthew', 'Lodoen, Melissa', 'Metherate, Raju', 'Shi, Xiaoyu', 'Walsh, Craig']",5
-19,"['Cho, Ken', 'James, Anthony', 'Lander, Arthur', 'Martiny, Adam', 'Plikus, Maksim', 'Sun, Sha']",6
+0,"['Arora, Kavita', 'Atwood, Scott', 'Blumberg, Bruce', 'Blurton-Jones, Mathew', 'Cho, Ken', 'Cohen-Cory, Susana', 'Drayman, Nir', 'Fruman, David', 'Gershon, Paul', 'Glabe, Charles', 'Green, Michael', 'Lander, Arthur', 'Mahler, Stephen', 'McNulty, Reginald', 'Nie, Qing', 'Suetterlin, Christine', 'Thompson, Leslie', 'Tsai, Shiou-Chuan']",18
+1,"['Allison, Steven', 'Daley, Monica', 'Emerson, J.J.', 'Eom, Dae Seok', 'Faiola, Celia', 'Gross, Steven', 'Hu, Yilin', 'Kvon, Evgeny', 'Lamb, Joleah', 'Lee, Grace', 'Long, Anthony', 'Lur, Gyorgy', 'MacGregor, Grant', 'McHenry, Matthew', 'Morehouse, Benjamin', 'Ribbe, Markus', 'Rodriguez Verdugo, Alejandra', 'Schilling, Thomas', 'Symons, Celia', 'Tenner, Andrea', 'Thompson-Peer, Katherine', 'Treseder, Kathleen']",22
+2,"['Azizi, Emanuel', 'Baker, Nicholas', 'Bardwell, Lee', 'Burley, Nancy', 'Chrastil, Elizabeth', 'Cocco, Melanie', 'Connor, Kwasi', 'Cramer, Karina', 'Edinger, Aimee', 'Fortin, Norbert', 'Goulding, Celia', 'Green, Kim', 'Hughes, Christopher', 'James, Anthony', 'Kim, Seungsoo', 'Konieczny, Piotr', 'LaFerla, Frank', 'Luo, Ray', 'McNaughton, Bruce', 'Morrissette, Naomi', 'Nicholas, Dequina', 'Pizzagalli, Diego', 'Plikus, Maksim', 'Sun, Sha', 'Warrior, Rahul']",25
+3,"['Busciglio, Jorge', 'Cahill, Larry', 'Cinquin, Olivier', 'Fowler, Christie', 'Grill, Joshua', 'Inlay, Matthew', 'Kawas, Claudia', 'Lodoen, Melissa', 'Schechtman-Drayman, Eitan', 'Shi, Xiaoyu', 'Stark, Craig', 'Sumikawa, Katumi', 'Tinoco, Roberto', 'Walsh, Craig', 'Wang, Wenqi', 'Wood, Marcelo']",16
+4,"['Bracken, Matthew', 'Briscoe, Adriana', 'Frank, Steven', 'Gaut, Brandon', 'German, Donovan', 'Gonen, Shane', 'Hammer, Tobin', 'Huxman, Travis', 'Lutterschmidt, Deborah', 'Martinez, Christopher', 'Martiny, Adam', 'Martiny, Jennifer', 'Mooney, Kailen', 'Parsons, Michael', 'Ranz, Jose', 'Rebolleda-Gomez, Maria', 'Sorte, Cascade', 'Striedter, Georg', 'Thornton, Kevin', 'Whiteson, Katrine', 'Wiles, Travis', 'Xue, Katherine']",22
+5,"['Donovan, Peter', 'Frostig, Ron', 'Halbrook, Christopher', 'Kong, Mei', 'Lane, Thomas', 'Lara-Gonzalez, Pablo', 'Metherate, Raju', 'Mortazavi, Ali', 'Razorenova, Olga', 'Swarup, Vivek', 'Yassa, Michael']",11

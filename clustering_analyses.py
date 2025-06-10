@@ -5,11 +5,10 @@ import numpy as np
 from sklearn.decomposition import PCA
 from umap.umap_ import UMAP
 import plotly.express as px
-# import plotly.graph_objects as go
-# from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.neighbors import NearestNeighbors
 from sklearn.metrics import silhouette_score
+from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.api as sm
@@ -17,9 +16,10 @@ from statsmodels.formula.api import ols
 from statsmodels.stats.multitest import multipletests
 from sklearn.preprocessing import StandardScaler
 
+
 # Create a configuration dictionary to store parameters
 config = {
-    'file_path': 'mesh_terms_matrix_5yrs_and_keywords.xlsx',
+    'file_path': 'faculty_mesh_terms_matrix.xlsx',
     'pca_components_to_try': range(1, 7),
     'final_pca_components': 5,
     'dbscan_eps': 0.05,
@@ -135,21 +135,6 @@ plt.xticks(range(1, 11))
 plt.grid(True)
 plt.show()
 
-# Run UMAP with PCA components
-# UMAP takes into account different dimensions and represnts the information in 2D. If you want smaller and more refined clusters, then use more components. But the starting number of components is usually based on the elbow plot.
-pca_result = PCA().fit_transform(feature_matrix)
-num_components = 3
-pca_reduced_features = pca_result[:, :num_components]
-umap_result = UMAP().fit_transform(pca_reduced_features)
-umap_df_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
-umap_df_pca['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
-umap_df_pca = umap_df_pca.merge(top_mesh_terms_df, on='Faculty_Full_Name', how='left')
-fig = px.scatter(umap_df_pca, x="V1", y="V2", title="UMAP on PCA Components", hover_name="Faculty_Full_Name",
-                 hover_data={"V1": False, "V2": False,
-                             'Top_Mesh_Terms': True},
-                 width=800, height=800, color_discrete_sequence=['#fecc07'])
-fig_show(fig)
-
 # Run UMAPs by iterating through different number of PCA components
 for num_components in config['pca_components_to_try']:
     pca_reduced_features = pca_result[:, :num_components]
@@ -164,13 +149,28 @@ for num_components in config['pca_components_to_try']:
                      width=800, height=800, color_discrete_sequence=['#fecc07'])
     fig_show(fig)
 
-# Update the number of components after iteration and looking at the elbow plot. This update will be used for the rest of the analysis.
-num_components = 3
+# Run UMAP with PCA components
+# UMAP takes into account different dimensions and represnts the information in 2D. If you want smaller and more refined clusters, then use more components. But the starting number of components is usually based on the elbow plot.
+pca_result = PCA().fit_transform(feature_matrix)
+num_components = int(input('Enter the number of PCA components to use for UMAP after looking at the iteration and elbow plot: '))
 pca_reduced_features = pca_result[:, :num_components]
-umap_result = UMAP(random_state=123).fit_transform(pca_reduced_features)
+umap_result = UMAP().fit_transform(pca_reduced_features)
 umap_df_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
 umap_df_pca['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
 umap_df_pca = umap_df_pca.merge(top_mesh_terms_df, on='Faculty_Full_Name', how='left')
+fig = px.scatter(umap_df_pca, x="V1", y="V2", title="UMAP on PCA Components", hover_name="Faculty_Full_Name",
+                 hover_data={"V1": False, "V2": False,
+                             'Top_Mesh_Terms': True},
+                 width=800, height=800, color_discrete_sequence=['#fecc07'])
+fig_show(fig)
+
+# # Update the number of components after iteration and looking at the elbow plot. This update will be used for the rest of the analysis.
+# num_components = input('Enter the number of PCA components to use for UMAP after looking at the iteration and elbow plot: ')
+# pca_reduced_features = pca_result[:, :num_components]
+# umap_result = UMAP(random_state=123).fit_transform(pca_reduced_features)
+# umap_df_pca = pd.DataFrame(umap_result, columns=["V1", "V2"])
+# umap_df_pca['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
+# umap_df_pca = umap_df_pca.merge(top_mesh_terms_df, on='Faculty_Full_Name', how='left')
 
 # Cluster UMAP with DBSCAN
 knn = NearestNeighbors(n_neighbors=2)
@@ -178,7 +178,7 @@ knn.fit(pca_reduced_features)
 distances, indices = knn.kneighbors(pca_reduced_features)
 dbscan_model = DBSCAN(eps=0.05, min_samples=2).fit(pca_reduced_features)
 umap_df_pca['cluster'] = dbscan_model.labels_
-umap_df_pca['Faculty_Full_Name'] = raw_data['Faculty_Full_Name'] # Add faculty names back to dataframe
+umap_df_pca['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
 
 # This section runs K-means clustering on UMAP coordinates.
 
@@ -212,9 +212,9 @@ plt.show()
 optimal_k = k_values[np.argmax(silhouette_scores)]
 print(f"Optimal number of clusters based on silhouette score: {optimal_k}")
 
-### K-means clustering on UMAP coordinates
+# K-means clustering on UMAP coordinates
 # Number of clusters for K-means
-n_clusters = 20 # You can adjust this parameter to get desired number of clusters
+n_clusters = int(input('Enter the number of clusters you want: ')) # You can adjust this parameter to get desired number of clusters
 
 # Perform K-means clustering on UMAP coordinates
 kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
@@ -228,6 +228,7 @@ print(f"Number of K-means clusters: {n_clusters}")
 
 # Visualize UMAP with K-means clusters
 umap_df_pca['Faculty_Full_Name'] = raw_data['Faculty_Full_Name']
+umap_df_pca['kmeans_cluster'] = umap_df_pca['kmeans_cluster'].astype(str)
 fig = px.scatter(
     umap_df_pca,
     x="V1",
@@ -238,7 +239,8 @@ fig = px.scatter(
     hover_data={"V1": False, "V2": False, 'Top_Mesh_Terms': True},
     width=800,
     height=800,
-    color_discrete_sequence=px.colors.qualitative.Bold  # Use a discrete color palette
+    color_discrete_sequence=px.colors.qualitative.Bold,
+    category_orders={'kmeans_cluster': sorted(umap_df_pca['kmeans_cluster'].astype(float))}
 )
 fig_show(fig)
 
@@ -322,7 +324,6 @@ for cluster_id in cluster_feature_matrix['cluster'].unique():
         continue
         
     # Calculate pairwise cosine similarities
-    from sklearn.metrics.pairwise import cosine_similarity
     similarities = cosine_similarity(cluster_data)
     
     # Average similarity (excluding self-similarity on diagonal)

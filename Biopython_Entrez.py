@@ -6,11 +6,11 @@ from collections import Counter
 import re
 import time
 
-# Load DataFrames from Excel files
-faculty_df = pd.read_excel('biosci_faculty.xlsx', sheet_name='minus_teaching')
-research_keywords_df = pd.read_excel('research_keywords.xlsx')
-faculty_proposal_mesh_terms_df = pd.read_excel('faculty_proposal_abstracts.xlsx', sheet_name='proposal_abstracts_sheet')
-mapped_mesh_terms_df = pd.read_excel('research_keywords_cleaned_mesh_terms.xlsx', usecols=['Faculty_Full_Name', 'Mapped_Mesh_Terms'])
+# Load dataframes
+faculty_df = pd.read_excel('/Users/mitalimittal/Downloads/faculty-clustering/faculty-clustering-project/BioSci_Faculty.xlsx', sheet_name='minus_teaching')
+research_keywords_df = pd.read_excel('/Users/mitalimittal/Downloads/faculty-clustering/faculty-clustering-project/Research_Keywords.xlsx')
+faculty_proposal_mesh_terms_df = pd.read_excel('/Users/mitalimittal/Downloads/faculty-clustering/faculty-clustering-project/Faculty_Proposal_Abstracts.xlsx', sheet_name='proposal_abstracts_sheet')
+mapped_mesh_terms_df = pd.read_excel('/Users/mitalimittal/Downloads/faculty-clustering/faculty-clustering-project/research_keywords_cleaned_mesh_terms.xlsx', usecols=['Faculty_Full_Name', 'Mapped_Mesh_Terms'])
 
 # Collect MeSH terms from publications
 ## Fetch PMIDs for each faculty member
@@ -201,8 +201,8 @@ unique_terms_df.to_excel('faculty_unique_mesh_terms.xlsx', index=False)
 # Convert 'Normalized_Scores' dictionary column to separate columns
 normalized_scores_df = combined_faculty_df['Normalized_Scores'].apply(pd.Series)
 
-# Add prefix to new columns
-normalized_scores_df = normalized_scores_df.add_prefix('Normalized_')
+# # Add prefix to new columns
+# normalized_scores_df = normalized_scores_df.add_prefix('Normalized_')
 
 # Align indices
 normalized_scores_df.index = combined_faculty_df.index

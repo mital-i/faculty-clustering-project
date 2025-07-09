@@ -57,9 +57,8 @@ def fig_show(fig):
 
 raw_data, feature_matrix, faculty_names_df = load_and_preprocess_data(config['file_path'])
 
+# Calculate the top 5 MeSH terms for each professor
 mesh_term_columns = [col for col in feature_matrix.columns]
-
-# Calculate the top 3 MeSH terms for each professor
 top_mesh_terms_list = []
 faculty_names = []
 for index, row in raw_data.iterrows():
@@ -69,9 +68,8 @@ for index, row in raw_data.iterrows():
         count = row[term]
         if count > 0:
             mesh_term_counts[term] = count
-    top_3_terms_with_prefix = [term for term, count in mesh_term_counts.most_common(5)]
-    top_3_terms_clean = [term.replace('Normalized_', '') for term in top_3_terms_with_prefix]
-    top_mesh_terms_list.append([top_3_terms_clean])  # Store as a list within a list
+    top_mesh_terms = [term for term, count in mesh_term_counts.most_common(5)]
+    top_mesh_terms_list.append([top_mesh_terms])
     faculty_names.append(professor_name)
 
 top_mesh_terms_df = pd.DataFrame({'Faculty_Full_Name': faculty_names, 'Top_Mesh_Terms': top_mesh_terms_list})
@@ -136,6 +134,8 @@ plt.grid(True)
 plt.show()
 
 # Run UMAPs by iterating through different number of PCA components
+pca_result = PCA().fit_transform(feature_matrix)
+
 for num_components in config['pca_components_to_try']:
     pca_reduced_features = pca_result[:, :num_components]
     umap_result = UMAP(random_state=123).fit_transform(pca_reduced_features)
@@ -151,7 +151,7 @@ for num_components in config['pca_components_to_try']:
 
 # Run UMAP with PCA components
 # UMAP takes into account different dimensions and represnts the information in 2D. If you want smaller and more refined clusters, then use more components. But the starting number of components is usually based on the elbow plot.
-pca_result = PCA().fit_transform(feature_matrix)
+#pca_result = PCA().fit_transform(feature_matrix)
 num_components = int(input('Enter the number of PCA components to use for UMAP after looking at the iteration and elbow plot: '))
 pca_reduced_features = pca_result[:, :num_components]
 umap_result = UMAP().fit_transform(pca_reduced_features)
@@ -214,7 +214,7 @@ print(f"Optimal number of clusters based on silhouette score: {optimal_k}")
 
 # K-means clustering on UMAP coordinates
 # Number of clusters for K-means
-n_clusters = int(input('Enter the number of clusters you want: ')) # You can adjust this parameter to get desired number of clusters
+n_clusters = int(input(f"Enter the number of clusters you want (optimal = {optimal_k}): ")) # You can adjust this parameter to get desired number of clusters
 
 # Perform K-means clustering on UMAP coordinates
 kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
@@ -380,8 +380,19 @@ def get_faculty_mesh_terms(faculty_list, raw_data, mesh_term_columns):
 
     return faculty_mesh_terms, overlapping_terms
 
-# Example Usage (assuming your raw_data and mesh_term_columns are already defined):
-faculty_to_check = ['Connor, Kwasi', 'Edinger, Aimee', 'Frostig, Ron', 'Goulding, Celia', 'Gross, Steven', 'Morrissette, Naomi']
+# Returns faculty MeSH terms from a chosen cluster
+cluster_input = int((input(f"Enter cluster number: ")))
+
+faculty_in_cluster_list = []
+
+for index, row in faculty_clusters_df.iterrows():
+    if row['Cluster'] == cluster_input:
+        faculty_in_cluster = row['Faculty_Full_Name']
+        faculty_in_cluster_list.append(faculty_in_cluster)
+
+faculty_in_cluster_list
+
+faculty_to_check = faculty_in_cluster_list
 faculty_mesh_results, common_terms = get_faculty_mesh_terms(faculty_to_check, raw_data, mesh_term_columns)
 
 # Create output text file

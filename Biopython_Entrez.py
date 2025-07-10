@@ -7,10 +7,10 @@ import re
 import time
 
 # Load dataframes
-faculty_df = pd.read_excel('/Users/mitalimittal/Downloads/faculty-clustering/faculty-clustering-project/BioSci_Faculty.xlsx', sheet_name='minus_teaching')
-research_keywords_df = pd.read_excel('/Users/mitalimittal/Downloads/faculty-clustering/faculty-clustering-project/Research_Keywords.xlsx')
-faculty_proposal_mesh_terms_df = pd.read_excel('/Users/mitalimittal/Downloads/faculty-clustering/faculty-clustering-project/Faculty_Proposal_Abstracts.xlsx', sheet_name='proposal_abstracts_sheet')
-mapped_mesh_terms_df = pd.read_excel('/Users/mitalimittal/Downloads/faculty-clustering/faculty-clustering-project/research_keywords_cleaned_mesh_terms.xlsx', usecols=['Faculty_Full_Name', 'Mapped_Mesh_Terms'])
+faculty_df = pd.read_excel('BioSci_Faculty.xlsx', sheet_name='minus_teaching')
+research_keywords_df = pd.read_excel('Research_Keywords.xlsx')
+faculty_proposal_mesh_terms_df = pd.read_excel('Faculty_Proposal_Abstracts.xlsx', sheet_name='proposal_abstracts_sheet')
+mapped_mesh_terms_df = pd.read_excel('research_keywords_cleaned_mesh_terms.xlsx', usecols=['Faculty_Full_Name', 'Mapped_Mesh_Terms'])
 
 # Collect MeSH terms from publications
 ## Fetch PMIDs for each faculty member
